@@ -1,0 +1,17 @@
+# ─────────────────────────────────────────────────────────────
+# render.yaml — Render.com deployment configuration
+# Nepal Chunab 2082 Live Dashboard
+# ─────────────────────────────────────────────────────────────
+services:
+  - type: web
+    name: nepal-chunab-2082
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: PYTHONUNBUFFERED
+        value: "1"
+    healthCheckPath: /api/status
