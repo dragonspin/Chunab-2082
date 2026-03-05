@@ -272,7 +272,6 @@ def build_pending_regions():
             "votes_counted": 0,
             "total_votes":   50000,
             "parties":       [],
-            "candidates":    None,
         }
         for m in MASTER
     ]
@@ -353,7 +352,7 @@ def normalize_ec_record(rec):
         "province":      base["province"]      if base else prov_no,
         "province_name": base["province_name"] if base else PROVINCES.get(prov_no, {}).get("name", "Province " + prov_no),
         "status":        ("declared" if rec.get("IsResult")
-                          else "counting" if (rec.get("VoteCount") or 0) > 0
+                          else "counting" if (rec.get("VoteCount") or 0) > 100
                           else "pending"),
         "votes_counted": int(rec.get("VoteCount") or rec.get("votes_counted") or 0),
         "total_votes":   int(rec.get("TotalVoters") or rec.get("total_votes") or 50000),
@@ -399,10 +398,10 @@ def parse_table_results(html, source_name):
         rows = table.find_all("tr")
         for row in rows[1:]:
             cols = [c.get_text(strip=True) for c in row.find_all(["td", "th"])]
-            if len(cols) >= 3:
+            if len(cols) >= 3 and cols[0]:
                 regions.append({
-                    "id":            str(len(regions) + 1),
-                    "name":          cols[0] or "—",
+                    "id":            "",        # blank → merge_live_into_master uses name match
+                    "name":          cols[0],
                     "district":      cols[1] if len(cols) > 1 else "—",
                     "province":      "?",
                     "province_name": "Unknown",
@@ -450,10 +449,10 @@ def merge_live_into_master(live_regions):
     """
     Always return all 165 constituencies from MASTER.
     Overlay live data where available; keep pending status for the rest.
-    Matches by id first, then by normalised name.
+    Matches by id first (only when id is non-empty), then by normalised name.
     """
-    live_by_id   = {r["id"]: r for r in live_regions}
-    live_by_name = {r["name"].lower(): r for r in live_regions}
+    live_by_id   = {r["id"]: r for r in live_regions if r.get("id")}
+    live_by_name = {r["name"].lower(): r for r in live_regions if r.get("name")}
 
     result = []
     for m in MASTER:
@@ -678,6 +677,14 @@ def scrape_all():
         live_regions = scrape_ekantipur()
         log.info(f"Ekantipur: got {len(live_regions)} records")
 
+    # Validate live data — ignore if suspiciously sparse (test/dummy data)
+    # Real counting will have many constituencies with votes > 0
+    if live_regions:
+        counting_count = sum(1 for r in live_regions if r.get("votes_counted", 0) > 100)
+        if counting_count < 3:
+            log.warning(f"Only {counting_count} constituencies with real votes — likely test data, ignoring.")
+            live_regions = []
+
     # Always produce full 165-region list
     regions = merge_live_into_master(live_regions)
 
@@ -685,8 +692,8 @@ def scrape_all():
     with cache_lock:
         cache["regions"]      = regions
         cache["last_updated"] = datetime.now().isoformat()
-        cache["status"]       = "ok" if live_regions else "error"
-        cache["error"]        = None if live_regions else "Could not fetch live data — showing pending placeholders."
+        cache["status"]       = "ok" if live_regions else "pending"
+        cache["error"]        = None if live_regions else "Counting has not started yet — all 165 constituencies pending."
     log.info(f"Cache updated: {len(regions)} regions | live: {len(live_regions)}")
 
 
