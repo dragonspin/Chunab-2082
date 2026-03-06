@@ -33,6 +33,7 @@ from bs4 import BeautifulSoup
 REFRESH_INTERVAL = 300          # seconds between scrapes
 EC_BASE          = "https://result.election.gov.np"
 EKANTIPUR_BASE   = "https://election.ekantipur.com"
+ONLINEKHABAR_BASE= "https://onlinekhabar.com"
 CHUNAB_BASE      = "https://www.chunab.org"
 NEPSEBAJAR_BASE  = "https://election.nepsebajar.com"
 
@@ -293,16 +294,10 @@ cache_lock = threading.Lock()
 # ─────────────────────────────────────────────────────────────
 EC_API_ENDPOINTS = [
     "/api/Result/GetAllConstituencyResult",
-    "/api/Result/GetFPTPResult",
-    "/api/Result/GetElectionResult",
-    "/api/Result/GetConstituencyWiseResult",
     "/api/GetConstituencyResult",
     "/api/result/GetAllConstituencyResult",
     "/api/result/constituency",
     "/api/Result/constituency",
-    "/api/Result/GetAllResult",
-    "/api/constituency/result",
-    "/Result/GetAllConstituencyResult",
 ]
 
 def try_ec_api():
@@ -423,74 +418,16 @@ def parse_table_results(html, source_name):
 
 
 def scrape_ekantipur():
-    """Scrape Ekantipur election results page — parses candidate vote rows."""
+    """Scrape Ekantipur election results page."""
     log.info("Scraping Ekantipur...")
     html = scrape_with_playwright(
         EKANTIPUR_BASE + "/?lng=eng",
-        wait_selector=".election-result, .constituency-result, table, .result-table, .candidate",
-        timeout=45000,
+        wait_selector="table, .result, .constituency",
+        timeout=40000,
     )
     if not html:
         return []
-
-    soup = BeautifulSoup(html, "html.parser")
-    regions = []
-
-    # Strategy A: look for structured constituency blocks
-    constituency_blocks = soup.find_all(
-        ["div", "section", "article"],
-        class_=lambda c: c and any(k in c for k in ["constituency", "result", "election"])
-    )
-    for block in constituency_blocks:
-        name_tag = block.find(["h2", "h3", "h4", "strong", "span"],
-                               class_=lambda c: c and "name" in (c or ""))
-        if not name_tag:
-            name_tag = block.find(["h2", "h3", "h4"])
-        if not name_tag:
-            continue
-        name = name_tag.get_text(strip=True)
-        if not name or len(name) < 3:
-            continue
-
-        parties = []
-        candidate_rows = block.find_all(["tr", "li", "div"],
-                                         class_=lambda c: c and "candidate" in (c or ""))
-        for row in candidate_rows:
-            texts = [t.strip() for t in row.stripped_strings if t.strip()]
-            if len(texts) >= 2:
-                votes = 0
-                for t in texts:
-                    if t.replace(",", "").isdigit():
-                        votes = int(t.replace(",", ""))
-                        break
-                parties.append({
-                    "candidate": texts[0],
-                    "party":     texts[1] if len(texts) > 1 else "",
-                    "votes":     votes,
-                    "status":    "leading" if not parties else "trailing",
-                })
-        if parties:
-            parties.sort(key=lambda x: x["votes"], reverse=True)
-            base = MASTER_BY_NAME.get(name.lower())
-            regions.append({
-                "id":            base["id"]           if base else "",
-                "name":          base["name"]         if base else name,
-                "district":      base["district"]     if base else "—",
-                "province":      base["province"]     if base else "?",
-                "province_name": base["province_name"] if base else "Unknown",
-                "status":        "counting",
-                "votes_counted": parties[0]["votes"] if parties else 0,
-                "total_votes":   50000,
-                "parties":       parties,
-                "_source":       "ekantipur",
-            })
-
-    # Strategy B: fall back to table parsing if no blocks found
-    if not regions:
-        regions = parse_table_results(html, "ekantipur")
-
-    log.info(f"Ekantipur parsed {len(regions)} regions")
-    return regions
+    return parse_table_results(html, "ekantipur")
 
 
 def scrape_ec_html():
@@ -716,6 +653,27 @@ def update_hero_votes(regions):
             cache["hero"]["oli"] = oli
 
 
+
+def scrape_onlinekhabar():
+    """Scrape OnlineKhabar election results page."""
+    log.info("Scraping OnlineKhabar...")
+    urls = [
+        "https://onlinekhabar.com/election-result-2082",
+        "https://onlinekhabar.com/election",
+        "https://onlinekhabar.com/election-result",
+    ]
+    for url in urls:
+        try:
+            r = requests.get(url, headers=HEADERS, timeout=15)
+            if r.ok and len(r.text) > 1000:
+                regions = parse_table_results(r.text, "onlinekhabar")
+                if regions:
+                    log.info(f"OnlineKhabar: found {len(regions)} regions at {url}")
+                    return regions
+        except Exception as e:
+            log.debug(f"OnlineKhabar {url} failed: {e}")
+    return []
+
 # ─────────────────────────────────────────────────────────────
 # MAIN SCRAPE LOOP
 # ─────────────────────────────────────────────────────────────
@@ -741,11 +699,16 @@ def scrape_all():
         live_regions = scrape_ekantipur()
         log.info(f"Ekantipur: got {len(live_regions)} records")
 
-    # Validate: only discard if zero constituencies have any votes
+    # Strategy 4: OnlineKhabar fallback
+    if not live_regions:
+        live_regions = scrape_onlinekhabar()
+        log.info(f"OnlineKhabar: got {len(live_regions)} records")
+
+    # Validate: only reject if truly zero votes anywhere
     if live_regions:
         counting_count = sum(1 for r in live_regions if r.get("votes_counted", 0) > 0)
         if counting_count < 1:
-            log.warning("No constituencies with real votes — likely pre-counting data, ignoring.")
+            log.warning("No real vote counts found — discarding.")
             live_regions = []
 
     # Always produce full 165-region list
