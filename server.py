@@ -28,6 +28,66 @@ import requests
 from bs4 import BeautifulSoup
 
 # ─────────────────────────────────────────────────────────────
+# GLOBAL PLAYWRIGHT BROWSER SINGLETON
+# One Chromium process shared across all scrape calls.
+# Launched lazily on first use; restarted if it crashes.
+# ─────────────────────────────────────────────────────────────
+_pw_instance   = None   # sync_playwright() context manager result
+_pw_browser    = None   # the Chromium Browser object
+_pw_lock       = threading.Lock()
+_early_log     = logging.getLogger(__name__)  # available immediately; same logger as `log` below
+
+# Chromium flags tuned for minimal RAM on Render free tier (512 MB)
+CHROMIUM_ARGS = [
+    "--no-sandbox",
+    "--disable-dev-shm-usage",
+    "--single-process",           # collapse renderer/GPU/network into one process (~100 MB saving)
+    "--disable-gpu",
+    "--disable-extensions",
+    "--disable-background-networking",
+    "--disable-default-apps",
+    "--disable-sync",
+    "--metrics-recording-only",
+    "--mute-audio",
+    "--no-first-run",
+    "--safebrowsing-disable-auto-update",
+]
+
+def _get_browser():
+    """Return the global Chromium browser, launching it if needed."""
+    global _pw_instance, _pw_browser
+    with _pw_lock:
+        if _pw_browser is not None and _pw_browser.is_connected():
+            return _pw_browser
+        # Close stale instance if any
+        try:
+            if _pw_instance:
+                _pw_instance.__exit__(None, None, None)
+        except Exception:
+            pass
+        try:
+            from playwright.sync_api import sync_playwright
+            _pw_instance = sync_playwright()
+            p = _pw_instance.__enter__()
+            _pw_browser = p.chromium.launch(headless=True, args=CHROMIUM_ARGS)
+            _early_log.info("Playwright browser launched (singleton).")
+            return _pw_browser
+        except Exception as e:
+            _early_log.error(f"Failed to launch Playwright browser: {e}")
+            _pw_browser = None
+            return None
+
+def _block_unnecessary(route):
+    """Abort heavy assets — images, fonts, stylesheets, media.
+    XHR/fetch ('xhr', 'fetch') and scripts ('script') are always allowed through
+    so JS-rendered data and JSON interception work correctly.
+    """
+    if route.request.resource_type in ("image", "stylesheet", "font", "media"):
+        route.abort()
+    else:
+        route.continue_()
+
+# ─────────────────────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────────────────────
 REFRESH_INTERVAL = 180          # seconds between scrapes (3 min — more responsive on election day)
@@ -395,73 +455,88 @@ def normalize_ec_record(rec):
 # ─────────────────────────────────────────────────────────────
 def scrape_with_playwright(url, wait_selector=None, timeout=45000, intercept_json=False):
     """
-    Load a JS-rendered page with Playwright.
+    Load a JS-rendered page using the global singleton Chromium browser.
 
-    If intercept_json=True, also capture any XHR/fetch responses that look
-    like election JSON — often faster than parsing the rendered HTML.
+    Optimisations vs the old per-call launcher:
+      • Reuses one browser process (no 2–3 s launch overhead per call)
+      • --single-process flag collapses renderer/GPU into one OS process
+      • Resource blocking: aborts images/fonts/CSS so only JS+XHR load
+      • intercept_json=True captures XHR payloads directly
+
     Returns (html, captured_json_list).  html may be None on failure.
     """
     captured_json = []
+    browser = _get_browser()
+    if browser is None:
+        return None, []
+
+    ctx  = None
+    page = None
+    on_response = None
     try:
-        from playwright.sync_api import sync_playwright
-        with sync_playwright() as p:
-            browser = p.chromium.launch(
-                headless=True,
-                args=["--no-sandbox", "--disable-dev-shm-usage"],
-            )
-            ctx = browser.new_context(
-                extra_http_headers={
-                    "User-Agent": HEADERS["User-Agent"],
-                    "Accept-Language": HEADERS["Accept-Language"],
-                },
-                ignore_https_errors=True,
-            )
-            page = ctx.new_page()
+        ctx = browser.new_context(
+            extra_http_headers={
+                "User-Agent":      HEADERS["User-Agent"],
+                "Accept-Language": HEADERS["Accept-Language"],
+            },
+            ignore_https_errors=True,
+        )
+        page = ctx.new_page()
 
-            if intercept_json:
-                def on_response(response):
-                    try:
-                        ct = response.headers.get("content-type", "")
-                        if "json" in ct and response.status == 200:
-                            text = response.text()
-                            if len(text) > 200:
-                                data = json.loads(text)
-                                # Only keep if it looks like election data
-                                if isinstance(data, list) and len(data) > 5:
-                                    captured_json.append(data)
-                                elif isinstance(data, dict):
-                                    for k in ("data","Data","result","Result","results","Results"):
-                                        v = data.get(k)
-                                        if isinstance(v, list) and len(v) > 5:
-                                            captured_json.append(v)
-                                            break
-                    except Exception:
-                        pass
-                page.on("response", on_response)
+        # Block heavy assets — only JS and XHR matter for election data
+        page.route("**/*", _block_unnecessary)
 
-            page.goto(url, timeout=timeout, wait_until="domcontentloaded")
-
-            # Try the preferred selector first, then fall back to a short fixed wait
-            if wait_selector:
+        if intercept_json:
+            def on_response(response):
                 try:
-                    page.wait_for_selector(wait_selector, timeout=15000)
+                    ct = response.headers.get("content-type", "")
+                    if "json" in ct and response.status == 200:
+                        text = response.text()
+                        if len(text) > 200:
+                            data = json.loads(text)
+                            if isinstance(data, list) and len(data) > 5:
+                                captured_json.append(data)
+                            elif isinstance(data, dict):
+                                for k in ("data","Data","result","Result","results","Results"):
+                                    v = data.get(k)
+                                    if isinstance(v, list) and len(v) > 5:
+                                        captured_json.append(v)
+                                        break
                 except Exception:
                     pass
-            # Extra 3 s for JS rendering after DOM load
+            page.on("response", on_response)
+        else:
+            on_response = None
+
+        page.goto(url, timeout=timeout, wait_until="domcontentloaded")
+
+        if wait_selector:
             try:
-                page.wait_for_load_state("networkidle", timeout=8000)
+                page.wait_for_selector(wait_selector, timeout=15000)
             except Exception:
                 pass
+        try:
+            page.wait_for_load_state("networkidle", timeout=8000)
+        except Exception:
+            pass
 
-            html = page.content()
-            browser.close()
-            return html, captured_json
-    except ImportError:
-        log.warning("Playwright not installed — run: playwright install chromium")
-        return None, []
+        html = page.content()
+        return html, captured_json
+
     except Exception as e:
         log.warning(f"Playwright failed for {url}: {e}")
         return None, []
+    finally:
+        try:
+            if on_response and page:
+                page.remove_listener("response", on_response)
+        except Exception:
+            pass
+        try:
+            if page:  page.close()
+            if ctx:   ctx.close()
+        except Exception:
+            pass
 
 
 # ── Rich HTML parsers ────────────────────────────────────────
@@ -982,56 +1057,85 @@ def parse_ok_constituency_page(html, constituency_name):
     }
 
 
-def scrape_onlinekhabar_one(name):
-    """Fetch and parse a single OnlineKhabar constituency page. Returns result dict or None."""
+def _ok_fetch_page(name):
+    """
+    Fetch a single OnlineKhabar constituency page via the singleton browser.
+    Votes are JS-rendered so plain requests won't work.
+    Tries intercepted XHR JSON first, falls back to rendered HTML.
+    Returns a result dict or None.
+    """
     slug_info = OK_SLUGS.get(name)
     if not slug_info:
-        log.debug(f"No OK slug for: {name}")
         return None
     prov_slug, const_slug = slug_info
     url = f"{ONLINEKHABAR_BASE}/{prov_slug}/{const_slug}"
-    try:
-        r = requests.get(url, headers=HEADERS, timeout=15)
-        if not r.ok:
-            log.debug(f"OK {name}: HTTP {r.status_code}")
-            return None
-        result = parse_ok_constituency_page(r.text, name)
-        if result:
-            log.info(f"✓ {name} — {result['votes_counted']} votes ({result['status']})")
-        return result
-    except Exception as e:
-        log.debug(f"OK fetch failed for {name}: {e}")
-        return None
+
+    html, captured = scrape_with_playwright(
+        url,
+        wait_selector="table, .election-result, [class*='result'], [class*='candidate']",
+        intercept_json=True,
+        timeout=40000,
+    )
+
+    # Priority 1: XHR JSON (structured, fast)
+    for payload in captured:
+        try:
+            sample = payload[0] if payload else {}
+            if any(k for k in sample if k.lower() in
+                   ("name","candidate","candidate_name","party","votes","vote_count")):
+                parties = []
+                for item in payload:
+                    cand  = (item.get("candidate_name") or item.get("candidate")
+                             or item.get("name") or "")
+                    party = item.get("party") or item.get("party_name") or ""
+                    votes = int(item.get("votes") or item.get("vote_count")
+                                or item.get("voteCount") or 0)
+                    if cand or party:
+                        parties.append({"party": party or "Unknown", "candidate": cand,
+                                        "votes": votes, "status": "trailing"})
+                if parties:
+                    parties.sort(key=lambda x: x["votes"], reverse=True)
+                    if parties[0]["votes"] > 0:
+                        parties[0]["status"] = "leading"
+                    vc = sum(p["votes"] for p in parties)
+                    return {"name": name, "status": "counting" if vc > 0 else "pending",
+                            "votes_counted": vc, "total_votes": 50000,
+                            "parties": parties, "_source": "onlinekhabar_xhr"}
+        except Exception:
+            pass
+
+    # Priority 2: rendered HTML
+    return parse_ok_constituency_page(html, name) if html else None
+
+
+# scrape_onlinekhabar_one is an alias kept for any callers elsewhere
+scrape_onlinekhabar_one = _ok_fetch_page
 
 
 def rolling_scrape_loop():
     """
     Continuously scrapes OnlineKhabar one constituency at a time, forever.
-    After each fetch the cache is updated immediately so the dashboard
-    always shows the freshest data possible.
-
-    Sequence: constituency 1 → 2 → 3 → ... → 165 → 1 → 2 → ...
-    A short delay between each request avoids hammering the server.
+    Uses the global singleton browser — no per-fetch launch overhead.
+    Cache is updated after every successful fetch for near-real-time data.
     """
-    DELAY_BETWEEN = 5   # seconds between each constituency fetch
-    DELAY_ON_ERROR = 10 # seconds to wait after a failed fetch
+    DELAY_BETWEEN = 5    # seconds between pages (polite; avoids 429)
+    DELAY_ON_ERROR = 10  # seconds after a failed fetch
 
     names = [m["name"] for m in MASTER]
-    log.info(f"Rolling scraper started — {len(names)} constituencies, {DELAY_BETWEEN}s delay each")
-    log.info(f"Full cycle time ≈ {len(names) * DELAY_BETWEEN // 60} min {len(names) * DELAY_BETWEEN % 60}s")
+    log.info(f"Rolling scraper started — {len(names)} constituencies, {DELAY_BETWEEN}s delay")
+    log.info(f"Full cycle ≈ {len(names) * DELAY_BETWEEN // 60} min {len(names) * DELAY_BETWEEN % 60}s")
 
     round_num = 0
     while True:
         round_num += 1
-        log.info(f"━━━ Round {round_num} starting ━━━")
+        log.info(f"━━━ Rolling round {round_num} ━━━")
         success_count = 0
 
         for i, name in enumerate(names, 1):
-            result = scrape_onlinekhabar_one(name)
+            result = _ok_fetch_page(name)
 
             if result:
                 success_count += 1
-                # Merge this single result into the cache immediately
                 with cache_lock:
                     for j, region in enumerate(cache["regions"]):
                         if region["name"] == name:
@@ -1047,39 +1151,37 @@ def rolling_scrape_loop():
                     cache["status"]       = "ok"
                     cache["source"]       = "onlinekhabar_rolling"
                     cache["error"]        = None
-
-                # Keep hero votes fresh
-                with cache_lock:
-                    update_hero_votes(cache["regions"])
-
+                    _update_hero_votes_locked(cache["regions"])
+                log.info(f"[{i}/{len(names)}] ✓ {name} — {result['votes_counted']} votes")
                 time.sleep(DELAY_BETWEEN)
             else:
+                log.debug(f"[{i}/{len(names)}] – {name}: no data")
                 time.sleep(DELAY_ON_ERROR)
 
-        log.info(f"━━━ Round {round_num} done — {success_count}/{len(names)} fetched ━━━")
+        log.info(f"━━━ Round {round_num} done — {success_count}/{len(names)} ━━━")
 
 
 def scrape_onlinekhabar_all():
     """
-    One-shot batch fetch of all 165 pages (used only at startup for the
-    initial cache fill before the rolling loop takes over).
-    Uses a thread pool so startup is fast.
+    Startup sequential scrape of all 165 pages via the singleton browser.
+    Sequential (not parallel) because each page needs a real browser tab
+    and parallel Playwright contexts would exhaust RAM on Render free tier.
     """
-    import concurrent.futures
-
-    log.info("Startup batch: fetching all 165 OnlineKhabar pages in parallel...")
+    names   = [m["name"] for m in MASTER]
     results = []
-    names = [m["name"] for m in MASTER]
+    log.info(f"Startup batch: scraping {len(names)} OnlineKhabar pages (singleton browser)...")
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=15) as pool:
-        futures = {pool.submit(scrape_onlinekhabar_one, name): name for name in names}
-        for future in concurrent.futures.as_completed(futures):
-            result = future.result()
-            if result:
-                results.append(result)
+    for i, name in enumerate(names, 1):
+        result = _ok_fetch_page(name)
+        if result:
+            results.append(result)
+            log.info(f"[{i}/{len(names)}] ✓ {name} — {result['votes_counted']} votes")
+        else:
+            log.debug(f"[{i}/{len(names)}] – {name}: no data")
+        time.sleep(2)  # polite delay
 
-    live = [r for r in results if r and r.get("status") != "pending"]
-    log.info(f"Startup batch done: {len(live)} live / {len(results)} fetched")
+    live = [r for r in results if r.get("votes_counted", 0) > 0]
+    log.info(f"Startup batch done: {len(live)} live / {len(results)} total")
     return results
 
 
@@ -1163,11 +1265,16 @@ def nepsebajar_slug(name):
 
 
 def nepsebajar_id(constituency_id):
-    return int(constituency_id)
+    try:
+        return int(constituency_id)
+    except (TypeError, ValueError):
+        return None
 
 
 def fetch_candidates_nepsebajar(constituency_id, constituency_name):
     nb_id = nepsebajar_id(constituency_id)
+    if nb_id is None:
+        return []
     slug  = nepsebajar_slug(constituency_name)
 
     # Try multiple URL patterns
@@ -1319,10 +1426,10 @@ def fetch_candidates(constituency_id, constituency_name):
 BALEN_KEYWORDS = ["balendra", "balen shah", "balen"]
 OLI_KEYWORDS   = ["kp sharma oli", "kp oli", "sharma oli", "k.p. oli"]
 
-def update_hero_votes(regions):
+def _compute_hero_votes(regions):
+    """Compute hero vote data from regions without touching the lock."""
     balen = {"votes": None, "status": None, "constituency": None}
     oli   = {"votes": None, "status": None, "constituency": None}
-
     for region in regions:
         for p in region.get("parties", []):
             cname = (p.get("candidate") or "").lower()
@@ -1330,12 +1437,26 @@ def update_hero_votes(regions):
                 balen = {"votes": p["votes"], "status": p["status"], "constituency": region["name"]}
             if oli["votes"] is None and any(k in cname for k in OLI_KEYWORDS):
                 oli   = {"votes": p["votes"], "status": p["status"], "constituency": region["name"]}
+    return balen, oli
 
+
+def update_hero_votes(regions):
+    """Compute and commit hero votes. Safe to call from OUTSIDE cache_lock only."""
+    balen, oli = _compute_hero_votes(regions)
     with cache_lock:
         if balen["votes"] is not None:
             cache["hero"]["balendra"] = balen
         if oli["votes"] is not None:
             cache["hero"]["oli"] = oli
+
+
+def _update_hero_votes_locked(regions):
+    """Update hero votes while cache_lock is ALREADY HELD by the caller."""
+    balen, oli = _compute_hero_votes(regions)
+    if balen["votes"] is not None:
+        cache["hero"]["balendra"] = balen
+    if oli["votes"] is not None:
+        cache["hero"]["oli"] = oli
 
 
 # ─────────────────────────────────────────────────────────────
@@ -1368,42 +1489,34 @@ def scrape_all():
             log.warning(f"OK API normalise failed: {e}")
             live_regions = []
 
-    # ── Strategy 2: OnlineKhabar per-page scrape (parallel HTTP) ──────────
-    if not live_regions:
-        ok_pages = scrape_onlinekhabar_all()
-        if ok_pages:
-            live_regions = ok_pages
-            source_used  = "onlinekhabar_pages"
-            log.info(f"Strategy 2 (OK pages): {len(live_regions)} records")
-
-    # ── Strategy 3: EC REST API ────────────────────────────────────────────
+    # ── Strategy 2: EC REST API ────────────────────────────────────────────
     if not live_regions:
         ec_data = try_ec_api()
         if ec_data:
             live_regions = [normalize_ec_record(r) for r in ec_data]
             source_used  = "ec_api"
-            log.info(f"Strategy 3 (EC API): {len(live_regions)} records")
+            log.info(f"Strategy 2 (EC API): {len(live_regions)} records")
 
-    # ── Strategy 4: EC HTML + XHR intercept ───────────────────────────────
+    # ── Strategy 3: EC HTML + XHR intercept ───────────────────────────────
     if not live_regions:
         live_regions = scrape_ec_html()
         if live_regions:
             source_used = "ec_html"
-        log.info(f"Strategy 4 (EC HTML): {len(live_regions)} records")
+        log.info(f"Strategy 3 (EC HTML): {len(live_regions)} records")
 
-    # ── Strategy 5: Ekantipur ──────────────────────────────────────────────
+    # ── Strategy 4: Ekantipur ──────────────────────────────────────────────
     if not live_regions:
         live_regions = scrape_ekantipur()
         if live_regions:
             source_used = "ekantipur"
-        log.info(f"Strategy 5 (Ekantipur): {len(live_regions)} records")
+        log.info(f"Strategy 4 (Ekantipur): {len(live_regions)} records")
 
-    # ── Strategy 6: chunab.org ─────────────────────────────────────────────
+    # ── Strategy 5: chunab.org ─────────────────────────────────────────────
     if not live_regions:
         live_regions = scrape_chunab_org()
         if live_regions:
             source_used = "chunab_org"
-        log.info(f"Strategy 6 (chunab.org): {len(live_regions)} records")
+        log.info(f"Strategy 5 (chunab.org): {len(live_regions)} records")
 
     # Always produce full 165-region list
     regions = merge_live_into_master(live_regions)
