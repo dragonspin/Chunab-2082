@@ -293,10 +293,16 @@ cache_lock = threading.Lock()
 # ─────────────────────────────────────────────────────────────
 EC_API_ENDPOINTS = [
     "/api/Result/GetAllConstituencyResult",
+    "/api/Result/GetFPTPResult",
+    "/api/Result/GetElectionResult",
+    "/api/Result/GetConstituencyWiseResult",
     "/api/GetConstituencyResult",
     "/api/result/GetAllConstituencyResult",
     "/api/result/constituency",
     "/api/Result/constituency",
+    "/api/Result/GetAllResult",
+    "/api/constituency/result",
+    "/Result/GetAllConstituencyResult",
 ]
 
 def try_ec_api():
@@ -417,16 +423,74 @@ def parse_table_results(html, source_name):
 
 
 def scrape_ekantipur():
-    """Scrape Ekantipur election results page."""
+    """Scrape Ekantipur election results page — parses candidate vote rows."""
     log.info("Scraping Ekantipur...")
     html = scrape_with_playwright(
         EKANTIPUR_BASE + "/?lng=eng",
-        wait_selector="table, .result, .constituency",
-        timeout=40000,
+        wait_selector=".election-result, .constituency-result, table, .result-table, .candidate",
+        timeout=45000,
     )
     if not html:
         return []
-    return parse_table_results(html, "ekantipur")
+
+    soup = BeautifulSoup(html, "html.parser")
+    regions = []
+
+    # Strategy A: look for structured constituency blocks
+    constituency_blocks = soup.find_all(
+        ["div", "section", "article"],
+        class_=lambda c: c and any(k in c for k in ["constituency", "result", "election"])
+    )
+    for block in constituency_blocks:
+        name_tag = block.find(["h2", "h3", "h4", "strong", "span"],
+                               class_=lambda c: c and "name" in (c or ""))
+        if not name_tag:
+            name_tag = block.find(["h2", "h3", "h4"])
+        if not name_tag:
+            continue
+        name = name_tag.get_text(strip=True)
+        if not name or len(name) < 3:
+            continue
+
+        parties = []
+        candidate_rows = block.find_all(["tr", "li", "div"],
+                                         class_=lambda c: c and "candidate" in (c or ""))
+        for row in candidate_rows:
+            texts = [t.strip() for t in row.stripped_strings if t.strip()]
+            if len(texts) >= 2:
+                votes = 0
+                for t in texts:
+                    if t.replace(",", "").isdigit():
+                        votes = int(t.replace(",", ""))
+                        break
+                parties.append({
+                    "candidate": texts[0],
+                    "party":     texts[1] if len(texts) > 1 else "",
+                    "votes":     votes,
+                    "status":    "leading" if not parties else "trailing",
+                })
+        if parties:
+            parties.sort(key=lambda x: x["votes"], reverse=True)
+            base = MASTER_BY_NAME.get(name.lower())
+            regions.append({
+                "id":            base["id"]           if base else "",
+                "name":          base["name"]         if base else name,
+                "district":      base["district"]     if base else "—",
+                "province":      base["province"]     if base else "?",
+                "province_name": base["province_name"] if base else "Unknown",
+                "status":        "counting",
+                "votes_counted": parties[0]["votes"] if parties else 0,
+                "total_votes":   50000,
+                "parties":       parties,
+                "_source":       "ekantipur",
+            })
+
+    # Strategy B: fall back to table parsing if no blocks found
+    if not regions:
+        regions = parse_table_results(html, "ekantipur")
+
+    log.info(f"Ekantipur parsed {len(regions)} regions")
+    return regions
 
 
 def scrape_ec_html():
@@ -677,24 +741,31 @@ def scrape_all():
         live_regions = scrape_ekantipur()
         log.info(f"Ekantipur: got {len(live_regions)} records")
 
-    # Validate live data — ignore if suspiciously sparse (test/dummy data)
-    # Real counting will have many constituencies with votes > 0
+    # Validate: only discard if zero constituencies have any votes
     if live_regions:
-        counting_count = sum(1 for r in live_regions if r.get("votes_counted", 0) > 100)
-        if counting_count < 3:
-            log.warning(f"Only {counting_count} constituencies with real votes — likely test data, ignoring.")
+        counting_count = sum(1 for r in live_regions if r.get("votes_counted", 0) > 0)
+        if counting_count < 1:
+            log.warning("No constituencies with real votes — likely pre-counting data, ignoring.")
             live_regions = []
 
     # Always produce full 165-region list
     regions = merge_live_into_master(live_regions)
 
     update_hero_votes(regions)
+
+    # Status: pending → counting → final
+    if live_regions:
+        finished = sum(1 for r in live_regions if r.get("status") in ("declared", "won", "final"))
+        status = "final" if finished == len(regions) else "counting"
+    else:
+        status = "pending"
+
     with cache_lock:
         cache["regions"]      = regions
         cache["last_updated"] = datetime.now().isoformat()
-        cache["status"]       = "ok" if live_regions else "pending"
+        cache["status"]       = status
         cache["error"]        = None if live_regions else "Counting has not started yet — all 165 constituencies pending."
-    log.info(f"Cache updated: {len(regions)} regions | live: {len(live_regions)}")
+    log.info(f"Cache updated: {len(regions)} regions | live: {len(live_regions)} | status: {status}")
 
 
 def background_loop():
