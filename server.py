@@ -950,43 +950,104 @@ def parse_ok_constituency_page(html, constituency_name):
     }
 
 
+def scrape_onlinekhabar_one(name):
+    """Fetch and parse a single OnlineKhabar constituency page. Returns result dict or None."""
+    slug_info = OK_SLUGS.get(name)
+    if not slug_info:
+        log.debug(f"No OK slug for: {name}")
+        return None
+    prov_slug, const_slug = slug_info
+    url = f"{ONLINEKHABAR_BASE}/{prov_slug}/{const_slug}"
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=15)
+        if not r.ok:
+            log.debug(f"OK {name}: HTTP {r.status_code}")
+            return None
+        result = parse_ok_constituency_page(r.text, name)
+        if result:
+            log.info(f"✓ {name} — {result['votes_counted']} votes ({result['status']})")
+        return result
+    except Exception as e:
+        log.debug(f"OK fetch failed for {name}: {e}")
+        return None
+
+
+def rolling_scrape_loop():
+    """
+    Continuously scrapes OnlineKhabar one constituency at a time, forever.
+    After each fetch the cache is updated immediately so the dashboard
+    always shows the freshest data possible.
+
+    Sequence: constituency 1 → 2 → 3 → ... → 165 → 1 → 2 → ...
+    A short delay between each request avoids hammering the server.
+    """
+    DELAY_BETWEEN = 5   # seconds between each constituency fetch
+    DELAY_ON_ERROR = 10 # seconds to wait after a failed fetch
+
+    names = [m["name"] for m in MASTER]
+    log.info(f"Rolling scraper started — {len(names)} constituencies, {DELAY_BETWEEN}s delay each")
+    log.info(f"Full cycle time ≈ {len(names) * DELAY_BETWEEN // 60} min {len(names) * DELAY_BETWEEN % 60}s")
+
+    round_num = 0
+    while True:
+        round_num += 1
+        log.info(f"━━━ Round {round_num} starting ━━━")
+        success_count = 0
+
+        for i, name in enumerate(names, 1):
+            result = scrape_onlinekhabar_one(name)
+
+            if result:
+                success_count += 1
+                # Merge this single result into the cache immediately
+                with cache_lock:
+                    for j, region in enumerate(cache["regions"]):
+                        if region["name"] == name:
+                            cache["regions"][j] = {
+                                **region,
+                                "status":        result.get("status", region["status"]),
+                                "votes_counted": result.get("votes_counted", region["votes_counted"]),
+                                "total_votes":   result.get("total_votes", region["total_votes"]),
+                                "parties":       result.get("parties", region["parties"]),
+                            }
+                            break
+                    cache["last_updated"] = datetime.now().isoformat()
+                    cache["status"]       = "ok"
+                    cache["source"]       = "onlinekhabar_rolling"
+                    cache["error"]        = None
+
+                # Keep hero votes fresh
+                with cache_lock:
+                    update_hero_votes(cache["regions"])
+
+                time.sleep(DELAY_BETWEEN)
+            else:
+                time.sleep(DELAY_ON_ERROR)
+
+        log.info(f"━━━ Round {round_num} done — {success_count}/{len(names)} fetched ━━━")
+
+
 def scrape_onlinekhabar_all():
     """
-    Scrape all 165 constituency pages from OnlineKhabar in parallel.
-    Uses a thread pool — each page is a cheap WordPress HTTP fetch.
-    Returns list of partial region dicts (name + parties + votes).
+    One-shot batch fetch of all 165 pages (used only at startup for the
+    initial cache fill before the rolling loop takes over).
+    Uses a thread pool so startup is fast.
     """
     import concurrent.futures
 
-    def fetch_one(name):
-        slug_info = OK_SLUGS.get(name)
-        if not slug_info:
-            return None
-        prov_slug, const_slug = slug_info
-        url = f"{ONLINEKHABAR_BASE}/{prov_slug}/{const_slug}"
-        try:
-            r = requests.get(url, headers=HEADERS, timeout=15)
-            if not r.ok:
-                return None
-            result = parse_ok_constituency_page(r.text, name)
-            return result
-        except Exception as e:
-            log.debug(f"OK fetch failed for {name}: {e}")
-            return None
-
-    log.info("Scraping OnlineKhabar — all 165 constituencies in parallel...")
+    log.info("Startup batch: fetching all 165 OnlineKhabar pages in parallel...")
     results = []
     names = [m["name"] for m in MASTER]
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as pool:
-        futures = {pool.submit(fetch_one, name): name for name in names}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=15) as pool:
+        futures = {pool.submit(scrape_onlinekhabar_one, name): name for name in names}
         for future in concurrent.futures.as_completed(futures):
             result = future.result()
             if result:
                 results.append(result)
 
     live = [r for r in results if r and r.get("status") != "pending"]
-    log.info(f"OnlineKhabar: {len(live)} constituencies with live data out of {len(results)} fetched")
+    log.info(f"Startup batch done: {len(live)} live / {len(results)} fetched")
     return results
 
 
@@ -1329,15 +1390,54 @@ def scrape_all():
 
 
 def background_loop():
-    while True:
+    """
+    Startup sequence:
+      1. Quick initial batch fill (parallel) so the dashboard isn't empty
+      2. Launch the rolling one-by-one loop in a separate thread
+      3. This thread then falls back to EC/Ekantipur if OnlineKhabar fails
+    """
+    # ── Step 1: fast initial fill via batch scrape ──
+    log.info("=== Startup: running initial batch scrape ===")
+    try:
+        ok_pages = scrape_onlinekhabar_all()
+        if ok_pages:
+            regions = merge_live_into_master(ok_pages)
+            update_hero_votes(regions)
+            with cache_lock:
+                cache["regions"]      = regions
+                cache["last_updated"] = datetime.now().isoformat()
+                cache["status"]       = "ok"
+                cache["source"]       = "onlinekhabar_startup"
+                cache["error"]        = None
+            log.info(f"=== Initial batch done: {len(ok_pages)} regions loaded ===")
+        else:
+            log.warning("Initial batch returned nothing — trying EC fallback...")
+            scrape_all()  # full fallback chain
+    except Exception as e:
+        log.error(f"Startup batch error: {e}")
         try:
             scrape_all()
-        except Exception as e:
-            log.error(f"Scrape loop error: {e}")
-            with cache_lock:
-                cache["status"] = "error"
-                cache["error"]  = str(e)
-        time.sleep(REFRESH_INTERVAL)
+        except Exception as e2:
+            log.error(f"Fallback scrape also failed: {e2}")
+
+    # ── Step 2: launch the rolling loop in a background thread ──
+    rolling_thread = threading.Thread(target=rolling_scrape_loop, daemon=True)
+    rolling_thread.start()
+    log.info("Rolling scraper thread launched.")
+
+    # ── Step 3: this thread periodically runs the full fallback chain
+    # in case OnlineKhabar goes down (every 10 minutes) ──
+    FALLBACK_INTERVAL = 600
+    while True:
+        time.sleep(FALLBACK_INTERVAL)
+        with cache_lock:
+            src = cache.get("source", "")
+        if "onlinekhabar" not in src:
+            log.info("Rolling scraper appears stalled — running full fallback chain...")
+            try:
+                scrape_all()
+            except Exception as e:
+                log.error(f"Fallback loop error: {e}")
 
 
 # ─────────────────────────────────────────────────────────────
