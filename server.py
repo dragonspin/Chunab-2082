@@ -467,10 +467,19 @@ def scrape_with_playwright(url, wait_selector=None, timeout=45000, intercept_jso
 # ── Rich HTML parsers ────────────────────────────────────────
 
 def _extract_number(text):
-    """Pull the first integer out of a string."""
+    """Pull the first integer out of a string.
+    Handles both Latin (0-9) and Nepali Unicode digits (०-९).
+    """
     import re
-    m = re.search(r"[\d,]+", text.replace(",", ""))
-    return int(m.group().replace(",", "")) if m else 0
+    if not text:
+        return 0
+    # Convert Nepali digits to Latin
+    nepali_to_latin = str.maketrans('०१२३४५६७८९', '0123456789')
+    text = text.translate(nepali_to_latin)
+    # Remove commas used as thousand separators
+    text = text.replace(',', '').replace('،', '')
+    m = re.search(r'\d+', text)
+    return int(m.group()) if m else 0
 
 
 def parse_ec_html(html):
@@ -880,49 +889,68 @@ OK_SLUGS = {
 def parse_ok_constituency_page(html, constituency_name):
     """
     Parse a single OnlineKhabar constituency result page.
-    The vote table looks like:
-      | S.N. | Candidate (Party) | Votes |
-    Votes column is empty until counting starts, then fills with numbers.
+
+    The page has THREE tables:
+      1. प्रत्यक्ष       — 2082 LIVE results  ← we want THIS ONE ONLY
+      2. प्रत्यक्ष २०७९  — 2079 old results   ← must skip
+      3. समानुपातिक २०७९ — 2079 proportional  ← must skip
+
+    The tables are rendered in order in the HTML so we just take the FIRST
+    table that has a candidate name in it and stop there.
+
+    Candidate name is inside a <a> link in column 1 (index 1).
+    Party name is in column 2 (index 2) — also an <a> link.
+    Votes are in column 3 (index 3) — Nepali Unicode digits or empty.
     """
-    import re
     soup = BeautifulSoup(html, "html.parser")
     parties = []
 
-    # Find the result table — it has columns: S.N. | उम्मेदवार | पार्टी | प्राप्त मत
     for table in soup.find_all("table"):
         rows = table.find_all("tr")
+        if len(rows) < 2:
+            continue
+
+        # Check this is a candidate table — header should contain उम्मेदवार
+        header_text = rows[0].get_text()
+        if "उम्मेदवार" not in header_text and "S.N." not in header_text:
+            continue
+
+        # Parse candidate rows
         for row in rows[1:]:
             cells = row.find_all(["td", "th"])
-            if len(cells) < 3:
+            if len(cells) < 2:
                 continue
 
-            # Candidate cell (index 1) contains name + party text
-            cand_cell = cells[1].get_text(" ", strip=True)
-            # Party cell may be separate (index 2) or embedded
-            party_cell = cells[2].get_text(strip=True) if len(cells) > 2 else ""
-            # Votes cell (last)
-            votes_text = cells[-1].get_text(strip=True)
-            votes = _extract_number(votes_text) if votes_text else 0
+            # Candidate name — first <a> tag in cell[1]
+            cand_cell = cells[1]
+            cand_link = cand_cell.find("a")
+            cand_name = cand_link.get_text(strip=True) if cand_link else cand_cell.get_text(" ", strip=True).split("\n")[0].strip()
 
-            # Extract candidate name (first line of cell)
-            lines = [l.strip() for l in cand_cell.split("\n") if l.strip()]
-            cand_name = lines[0] if lines else "—"
+            # Skip header rows or empty rows
+            if not cand_name or cand_name in ("S.N.", "उम्मेदवार", ""):
+                continue
 
-            # Identify party — look in dedicated party cell or candidate cell
+            # Party name — first <a> tag in cell[2]
             party = ""
-            for text in [party_cell, cand_cell]:
-                for kw in ["Congress","UML","Maoist","Swatantra","Prajatantra",
-                           "Independent","Janamat","Samajwadi","Communist",
-                           "Unmukti","कांग्रेस","एमाले","माओवादी","स्वतन्त्र",
-                           "Rastriya","Nepali","CPN","NCP"]:
-                    if kw.lower() in text.lower():
-                        # use the party cell text if available, otherwise keyword
-                        party = party_cell if party_cell else kw
-                        break
-                if party:
-                    break
+            if len(cells) > 2:
+                party_cell = cells[2]
+                party_link = party_cell.find("a")
+                party = party_link.get_text(strip=True) if party_link else party_cell.get_text(strip=True)
 
-            if cand_name and cand_name != "S.N." and not cand_name.isdigit():
+            # If party still empty, look inside the candidate cell (some pages embed it)
+            if not party:
+                all_links = cand_cell.find_all("a")
+                if len(all_links) > 1:
+                    party = all_links[-1].get_text(strip=True)
+
+            # Votes — cell[3] if exists, else last cell
+            votes = 0
+            if len(cells) > 3:
+                votes = _extract_number(cells[3].get_text(strip=True))
+            if votes == 0 and len(cells) > 1:
+                votes = _extract_number(cells[-1].get_text(strip=True))
+
+            if cand_name:
                 parties.append({
                     "party":     party or "Unknown",
                     "candidate": cand_name,
@@ -930,11 +958,15 @@ def parse_ok_constituency_page(html, constituency_name):
                     "status":    "trailing",
                 })
 
+        # Stop after the FIRST valid candidate table — don't fall into 2079 tables
+        if parties:
+            break
+
     if not parties:
         return None
 
     parties.sort(key=lambda x: x["votes"], reverse=True)
-    if parties and parties[0]["votes"] > 0:
+    if parties[0]["votes"] > 0:
         parties[0]["status"] = "leading"
 
     votes_counted = sum(p["votes"] for p in parties)
