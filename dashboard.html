@@ -4,789 +4,415 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Nepal Chunab 2082 — Live Results</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
-/* ═══════════════════════════════════════════════════════
-   DESIGN SYSTEM — Nepal Chunab 2082
-   Professional Election Dashboard · 2082 BS
-   ═══════════════════════════════════════════════════════ */
-:root{
-  /* Dark Theme (default) */
-  --bg:          #07080f;
-  --surface:     #0d0f1a;
-  --surface2:    #111320;
-  --card:        #131520;
-  --card-hover:  #181a28;
-  --border:      rgba(255,255,255,.07);
-  --border2:     rgba(255,255,255,.04);
-  --text:        #f0f0ff;
-  --text2:       #a0a0c0;
-  --muted:       #555570;
-  --accent:      #ef4444;
-  --accent-glow: rgba(239,68,68,.15);
-  --gold:        #f59e0b;
-  --gold-glow:   rgba(245,158,11,.12);
-  --green:       #22c55e;
-  --green-glow:  rgba(34,197,94,.12);
-  --blue:        #3b82f6;
-  --shadow-sm:   0 1px 3px rgba(0,0,0,.4);
-  --shadow-md:   0 4px 16px rgba(0,0,0,.5);
-  --shadow-lg:   0 8px 32px rgba(0,0,0,.6);
-  --radius-sm:   6px;
-  --radius-md:   12px;
-  --radius-lg:   18px;
-  --radius-xl:   24px;
-  --header-bg:   rgba(7,8,15,.92);
-  --hero-fade:   #07080f;
-  --mono:        'JetBrains Mono', monospace;
-  --serif:       'Playfair Display', serif;
-  --sans:        'Inter', sans-serif;
-}
-body.light{
-  --bg:          #f7f8fc;
-  --surface:     #eef0f8;
-  --surface2:    #e5e8f5;
-  --card:        #ffffff;
-  --card-hover:  #f0f2fc;
-  --border:      rgba(0,0,30,.09);
-  --border2:     rgba(0,0,30,.05);
-  --text:        #0d0f1e;
-  --text2:       #4a4a6a;
-  --muted:       #9090b0;
-  --accent:      #dc2626;
-  --accent-glow: rgba(220,38,38,.08);
-  --gold:        #d97706;
-  --gold-glow:   rgba(217,119,6,.08);
-  --green:       #16a34a;
-  --green-glow:  rgba(22,163,74,.08);
-  --shadow-sm:   0 1px 3px rgba(0,0,40,.08);
-  --shadow-md:   0 4px 16px rgba(0,0,40,.1);
-  --shadow-lg:   0 8px 32px rgba(0,0,40,.14);
-  --header-bg:   rgba(247,248,252,.94);
-  --hero-fade:   #f7f8fc;
-}
-
+:root{--bg:#080810;--surface:#0f0f18;--card:#13131e;--border:#1e1e30;--glow:#2a2a4a;--accent:#e8382a;--accent2:#f5a623;--accent3:#4ade80;--text:#e8e8f4;--muted:#5a5a7a;}
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden;transition:background .35s,color .35s;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 15% 5%,rgba(10,58,170,.08) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 85% 95%,rgba(192,16,16,.08) 0%,transparent 60%);pointer-events:none;z-index:0;}
 
-/* Ambient background glow */
-body::before{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:
-    radial-gradient(ellipse 80% 60% at 5% 0%, rgba(59,130,246,.05) 0%, transparent 55%),
-    radial-gradient(ellipse 70% 50% at 95% 100%, rgba(239,68,68,.06) 0%, transparent 55%),
-    radial-gradient(ellipse 50% 40% at 50% 50%, rgba(245,158,11,.02) 0%, transparent 60%);
-  transition:opacity .35s;
-}
-body.light::before{opacity:0;}
-
-/* ── SCROLLBAR ──────────────────────────────────────────── */
-::-webkit-scrollbar{width:3px;height:3px;}
-::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px;}
-
-/* ── LOADER ─────────────────────────────────────────────── */
-#loader{
-  position:fixed;inset:0;background:var(--bg);z-index:9999;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
-  transition:opacity .6s;
-}
+/* LOADER */
+#loader{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .5s;}
 #loader.gone{opacity:0;pointer-events:none;}
-.ld-flag{font-size:52px;animation:float 2.5s ease-in-out infinite;}
-@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
-.ld-title{font-family:var(--serif);font-size:28px;letter-spacing:2px;font-weight:700;
-  background:linear-gradient(135deg,#818cf8,#f0f0ff,#f87171);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.ld-sub{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:4px;text-transform:uppercase;}
-.ld-bar{width:160px;height:1px;background:var(--border);border-radius:1px;overflow:hidden;margin-top:4px;}
-.ld-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--accent));animation:ldprog 1.8s ease forwards;}
+.ld-icon{font-size:42px;animation:spin 3s linear infinite;}
+.ld-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:5px;}
+.ld-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:3px;}
+.ld-bar{width:200px;height:2px;background:var(--border);border-radius:1px;overflow:hidden;}
+.ld-fill{height:100%;background:var(--accent);animation:ldprog 1.5s ease forwards;}
+@keyframes spin{to{transform:rotate(360deg);}}
 @keyframes ldprog{0%{width:0}100%{width:100%}}
 
-/* ── HEADER ─────────────────────────────────────────────── */
-header{
-  position:sticky;top:0;z-index:100;
-  background:var(--header-bg);
-  backdrop-filter:blur(24px) saturate(1.4);
-  -webkit-backdrop-filter:blur(24px) saturate(1.4);
-  border-bottom:1px solid var(--border);
-  padding:0 28px;height:56px;
-  display:flex;align-items:center;justify-content:space-between;gap:16px;
-  transition:background .35s;
-}
-.h-brand{display:flex;align-items:center;gap:11px;}
-.h-brand-flag{font-size:22px;line-height:1;}
-.h-brand-text{display:flex;flex-direction:column;gap:0;}
-.h-brand-name{font-family:var(--serif);font-size:19px;font-weight:700;letter-spacing:.5px;line-height:1.1;}
-.h-brand-sub{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;}
-.h-controls{display:flex;align-items:center;gap:8px;}
-.live-chip{
-  display:flex;align-items:center;gap:5px;
-  background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);
-  border-radius:100px;padding:4px 11px;
-  font-family:var(--mono);font-size:8px;letter-spacing:2.5px;color:var(--accent);
-  font-weight:500;
-}
-.live-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:pulse 1.6s ease infinite;}
-@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(239,68,68,.6);}50%{opacity:.7;box-shadow:0 0 0 4px rgba(239,68,68,0);}}
-.hbtn{
-  height:32px;padding:0 13px;
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
-  color:var(--text2);font-family:var(--mono);font-size:9px;cursor:pointer;
-  transition:all .2s;letter-spacing:.5px;white-space:nowrap;
-  display:flex;align-items:center;gap:5px;
-}
-.hbtn:hover{background:var(--card);border-color:rgba(255,255,255,.15);color:var(--text);}
-.hbtn.icon-btn{width:32px;padding:0;justify-content:center;font-size:15px;}
-#lastUpd{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.3px;}
+/* HEADER */
+header{position:sticky;top:0;z-index:50;background:rgba(8,8,16,.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.h-left{display:flex;align-items:center;gap:12px;}
+.h-title h1{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;}
+.h-title span{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:3px;}
+.h-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.live-pill{display:flex;align-items:center;gap:5px;background:rgba(232,56,42,.1);border:1px solid rgba(232,56,42,.3);border-radius:100px;padding:3px 10px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--accent);}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:blink 1.4s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.hbtn{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:5px 11px;color:var(--text);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;transition:border-color .2s;letter-spacing:1px;}
+.hbtn:hover{border-color:var(--accent);}
+#lastUpd{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
 
-/* ── STATUS BAR ─────────────────────────────────────────── */
-#srvBar{
-  position:relative;z-index:5;
-  padding:5px 28px;
-  background:var(--surface);border-bottom:1px solid var(--border);
-  font-family:var(--mono);font-size:9px;color:var(--muted);
-  display:flex;align-items:center;gap:8px;letter-spacing:.3px;
-}
-.srv-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background .3s;}
-.srv-dot.online{background:var(--green);box-shadow:0 0 6px rgba(34,197,94,.4);}
-.srv-dot.offline{background:var(--accent);box-shadow:0 0 6px rgba(239,68,68,.4);}
+/* SERVER BAR */
+#srvBar{position:relative;z-index:5;padding:5px 24px;background:rgba(8,8,16,.7);border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);display:flex;align-items:center;gap:7px;}
+.srv-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--muted);}
+.srv-dot.online{background:var(--accent3);}
+.srv-dot.offline{background:var(--accent);}
 
-/* ── HERO SECTION ───────────────────────────────────────── */
-.hero{
-  position:relative;z-index:5;
-  display:grid;grid-template-columns:1fr auto 1fr;
-  border-bottom:1px solid var(--border);
-  background:var(--surface);
-  overflow:hidden;min-height:170px;
-}
-/* Geometric pattern overlay */
-.hero::before{
-  content:'';position:absolute;inset:0;
-  background-image:radial-gradient(circle at 1px 1px, rgba(255,255,255,.03) 1px, transparent 0);
-  background-size:24px 24px;pointer-events:none;z-index:0;
-}
-.h-side{
-  display:flex;align-items:center;padding:20px 22px;gap:14px;
-  position:relative;z-index:1;overflow:hidden;
-}
-.h-left-side{
-  background:linear-gradient(135deg,rgba(30,58,138,.6) 0%,rgba(37,99,235,.3) 50%,rgba(30,58,138,.1) 100%);
-  border-right:1px solid var(--border);
-}
-.h-right-side{
-  background:linear-gradient(225deg,rgba(127,29,29,.6) 0%,rgba(185,28,28,.3) 50%,rgba(127,29,29,.1) 100%);
-  border-left:1px solid var(--border);
-  flex-direction:row-reverse;
-}
-/* Animated accent line */
-.h-side::after{
-  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
-  animation:heroLine 3s ease-in-out infinite;
-}
-.h-left-side::after{background:linear-gradient(90deg,transparent,rgba(59,130,246,.6),transparent);}
-.h-right-side::after{background:linear-gradient(90deg,transparent,rgba(239,68,68,.6),transparent);}
-@keyframes heroLine{0%,100%{opacity:.4;}50%{opacity:1;}}
-
-.h-person{display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;z-index:2;}
-.h-photo{
-  width:72px;height:86px;border-radius:10px;overflow:hidden;
-  border:1.5px solid rgba(255,255,255,.15);
-  background:rgba(255,255,255,.06);
-  box-shadow:0 4px 20px rgba(0,0,0,.4);
-  flex-shrink:0;
-}
+/* HERO */
+.hero{position:relative;z-index:5;display:flex;align-items:stretch;border-bottom:1px solid var(--border);min-height:160px;overflow:hidden;}
+.h-side{flex:0 0 220px;display:flex;align-items:center;padding:14px 18px;gap:12px;position:relative;overflow:hidden;}
+.h-left-side{background:linear-gradient(135deg,#06205e,#0e3fc4 55%,#091e6a);}
+.h-right-side{background:linear-gradient(225deg,#5c0000,#c01010 55%,#7a0505);flex-direction:row-reverse;}
+.h-side::after{content:'';position:absolute;top:0;width:50px;height:100%;background:linear-gradient(90deg,transparent,var(--bg));z-index:2;}
+.h-left-side::after{right:-1px;}
+.h-right-side::after{left:-1px;background:linear-gradient(270deg,transparent,var(--bg));}
+.sweep{position:absolute;top:-60%;left:-20%;width:35%;height:220%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);transform:skewX(-15deg);animation:swp 4s ease-in-out infinite;}
+@keyframes swp{0%,100%{left:-20%;opacity:0;}40%{opacity:1;}60%{left:110%;opacity:0;}}
+.h-person{display:flex;flex-direction:column;align-items:center;gap:5px;position:relative;z-index:3;}
+.h-photo{width:70px;height:82px;border-radius:8px;overflow:hidden;border:2px solid rgba(255,255,255,.2);flex-shrink:0;background:rgba(255,255,255,.05);}
 .h-photo img{width:100%;height:100%;object-fit:cover;object-position:top center;}
-.h-name{font-family:var(--serif);font-size:12px;font-weight:700;color:#fff;text-align:center;letter-spacing:.3px;line-height:1.2;}
-.h-party-badge{
-  display:flex;align-items:center;gap:4px;
-  background:rgba(0,0,0,.35);backdrop-filter:blur(8px);
-  border:1px solid rgba(255,255,255,.12);border-radius:100px;
-  padding:3px 8px;font-family:var(--mono);font-size:7.5px;letter-spacing:1px;color:rgba(255,255,255,.8);
-}
-.h-party-logo{width:12px;height:12px;object-fit:contain;border-radius:2px;}
-.h-stats{
-  background:rgba(0,0,0,.3);backdrop-filter:blur(8px);
-  border:1px solid rgba(255,255,255,.1);border-radius:8px;
-  padding:6px 12px;min-width:80px;text-align:center;
-}
-.h-votes{font-family:var(--serif);font-size:20px;font-weight:700;color:#fff;line-height:1;}
-.h-votes-lbl{font-family:var(--mono);font-size:7px;letter-spacing:2px;color:rgba(255,255,255,.35);margin-top:2px;}
-.h-status{font-family:var(--mono);font-size:7px;letter-spacing:1px;margin-top:3px;font-weight:600;}
-.h-status.leading,.h-status.won{color:var(--green);}
-.h-status.trailing{color:rgba(255,255,255,.25);}
+.h-name{font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:1px;color:#fff;text-align:center;line-height:1.2;}
+.h-party-tag{display:flex;align-items:center;gap:4px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.15);border-radius:100px;padding:2px 7px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1px;color:rgba(255,255,255,.85);}
+.h-party-logo{width:13px;height:13px;object-fit:contain;}
+.h-vbox{margin-top:3px;text-align:center;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:3px 8px;min-width:70px;}
+.h-vnum{font-family:'Bebas Neue',sans-serif;font-size:18px;color:#fff;line-height:1;}
+.h-vlbl{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:2px;color:rgba(255,255,255,.4);}
+.h-vstatus{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:1px;margin-top:1px;font-weight:600;}
+.h-vstatus.leading,.h-vstatus.won{color:#4ade80;}
+.h-vstatus.trailing{color:rgba(255,255,255,.3);}
+.h-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:14px 24px;text-align:center;background:rgba(8,8,16,.6);}
+.h-title-text{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:5px;background:linear-gradient(90deg,#6090ff,#e8e8f4,#ff6060);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}
+.h-sub{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--muted);}
+.h-date{font-family:'DM Mono',monospace;font-size:8px;color:var(--accent2);letter-spacing:2px;margin-top:2px;}
 
-/* Hero center */
-.h-center{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:6px;padding:20px 32px;text-align:center;
-  background:rgba(7,8,15,.5);position:relative;z-index:1;min-width:220px;
-}
-body.light .h-center{background:rgba(247,248,252,.5);}
-.h-title-main{
-  font-family:var(--serif);font-size:26px;font-weight:900;letter-spacing:1px;
-  background:linear-gradient(135deg,#818cf8 0%,#f0f0ff 45%,#fb7185 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  line-height:1;
-}
-body.light .h-title-main{
-  background:linear-gradient(135deg,#4f46e5 0%,#1e1b4b 45%,#be123c 100%);
-  -webkit-background-clip:text;background-clip:text;
-}
-.h-tagline{font-family:var(--mono);font-size:8px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;}
-.h-date-badge{
-  display:inline-flex;align-items:center;gap:6px;
-  background:var(--gold-glow);border:1px solid rgba(245,158,11,.2);
-  border-radius:100px;padding:3px 10px;
-  font-family:var(--mono);font-size:7.5px;color:var(--gold);letter-spacing:1.5px;
-}
+/* SUMMARY BAR */
+.sumbar{position:relative;z-index:5;padding:10px 24px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;gap:24px;overflow-x:auto;align-items:center;flex-wrap:wrap;}
+.ss{display:flex;flex-direction:column;gap:1px;flex-shrink:0;}
+.ss .v{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;line-height:1;}
+.ss .l{font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+.sdiv{width:1px;height:28px;background:var(--border);flex-shrink:0;}
 
-/* ── STATS BAR ──────────────────────────────────────────── */
-.statsbar{
-  position:relative;z-index:5;
-  display:flex;align-items:center;
-  padding:0 28px;background:var(--surface2);
-  border-bottom:1px solid var(--border);
-  overflow-x:auto;gap:0;
-  -webkit-overflow-scrolling:touch;
-}
-.statsbar::-webkit-scrollbar{display:none;}
-.stat-item{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:12px 24px;gap:2px;flex-shrink:0;border-right:1px solid var(--border);
-  min-width:80px;
-}
-.stat-item:last-child{border-right:none;}
-.stat-num{font-family:var(--serif);font-size:28px;font-weight:700;line-height:1;}
-.stat-lbl{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
-.stat-bar{position:relative;z-index:5;height:3px;background:var(--border);display:flex;overflow:hidden;}
-.stat-bar-fill{height:100%;transition:width .8s ease;}
-
-/* ── FILTERS ────────────────────────────────────────────── */
-.filters{
-  position:relative;z-index:5;
-  padding:10px 28px;
-  display:flex;gap:6px;align-items:center;flex-wrap:nowrap;
-  border-bottom:1px solid var(--border);
-  background:var(--surface);
-  overflow-x:auto;
-  -webkit-overflow-scrolling:touch;
-}
-.filters::-webkit-scrollbar{display:none;}
-.flbl{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-right:4px;flex-shrink:0;}
-.fbtn{
-  height:30px;padding:0 14px;
-  background:transparent;border:1px solid var(--border);border-radius:100px;
-  color:var(--text2);font-size:11px;cursor:pointer;
-  transition:all .2s;font-family:var(--sans);font-weight:500;
-  flex-shrink:0;white-space:nowrap;
-}
-.fbtn:hover,.fbtn.active{
-  background:var(--accent-glow);border-color:rgba(239,68,68,.3);
-  color:var(--text);
-}
-.sbox{
-  height:30px;padding:0 12px;
-  background:var(--card);border:1px solid var(--border);border-radius:100px;
-  color:var(--text);font-size:11px;font-family:var(--sans);outline:none;
-  width:200px;margin-left:auto;transition:all .2s;flex-shrink:0;
-}
-.sbox:focus{border-color:rgba(255,255,255,.2);background:var(--surface2);}
+/* FILTERS */
+.filters{position:relative;z-index:5;padding:10px 24px;display:flex;gap:7px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border);background:rgba(8,8,16,.5);}
+.flbl{font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-right:3px;flex-shrink:0;}
+.fbtn{background:transparent;border:1px solid var(--border);border-radius:5px;padding:3px 10px;color:var(--muted);font-size:11px;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;}
+.fbtn:hover,.fbtn.active{border-color:var(--accent);color:var(--text);background:rgba(232,56,42,.07);}
+.sbox{background:var(--card);border:1px solid var(--border);border-radius:5px;padding:4px 11px;color:var(--text);font-size:11px;font-family:'DM Sans',sans-serif;outline:none;width:180px;margin-left:auto;transition:border-color .2s;}
+.sbox:focus{border-color:var(--glow);}
 .sbox::placeholder{color:var(--muted);}
 
-/* ── SEAT TALLY ─────────────────────────────────────────── */
-.tally{
-  position:relative;z-index:5;
-  padding:16px 28px 18px;
-  border-bottom:1px solid var(--border);
-  background:var(--surface);
-}
-.tally-header{
-  display:flex;align-items:center;gap:10px;margin-bottom:14px;
-}
-.tally-title{
-  font-family:var(--mono);font-size:8.5px;font-weight:500;
-  letter-spacing:3px;color:var(--muted);text-transform:uppercase;
-}
-.tally-title::before{content:'🏆 ';}
-.tally-divider{flex:1;height:1px;background:var(--border);}
-.tally-row{display:flex;align-items:stretch;gap:6px;overflow-x:auto;padding-bottom:2px;}
-.tally-row::-webkit-scrollbar{height:2px;}
-.tally-chip{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  min-width:62px;padding:10px 10px 8px;border-radius:10px;
-  position:relative;flex-shrink:0;gap:2px;
-  border:1px solid transparent;
-  transition:transform .2s;cursor:default;
-}
-.tally-chip:hover{transform:translateY(-2px);}
-.t-seats{font-family:var(--serif);font-size:26px;font-weight:700;line-height:1;}
-.t-short{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.5px;opacity:.9;}
-.t-label{font-family:var(--mono);font-size:8.5px;opacity:.5;text-transform:uppercase;letter-spacing:.5px;}
-.tally-chip.others{background:var(--surface2);border-color:var(--border);}
-.tally-chip.others .t-seats{color:var(--text2);font-size:18px;}
-.tally-chip.others .t-short{color:var(--text2);}
-.tally-maj{
-  margin-left:auto;flex-shrink:0;
-  display:flex;flex-direction:column;align-items:flex-end;justify-content:center;
-  gap:3px;padding-left:16px;border-left:1px solid var(--border);
-}
-.tally-maj-num{font-family:var(--serif);font-size:20px;font-weight:700;line-height:1;}
-.tally-maj-lbl{font-family:var(--mono);font-size:7.5px;color:var(--muted);letter-spacing:1px;}
-
-/* ── SPOTLIGHT ──────────────────────────────────────────── */
-.spotlight{
-  position:relative;z-index:5;
-  padding:20px 28px 26px;
-  border-bottom:1px solid var(--border);
-  background:var(--surface2);
-}
-body.light .spotlight{background:var(--surface);}
-.spot-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
-.spot-title{
-  font-family:var(--mono);font-size:8.5px;font-weight:500;
-  letter-spacing:3px;color:var(--muted);text-transform:uppercase;
-}
-.spot-title::before{content:'📍 ';}
-.spot-divider{flex:1;height:1px;background:var(--border);}
-.spot-counter-group{display:flex;align-items:center;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;}
-.spot-ctrl-btn{
-  width:32px;height:28px;background:transparent;border:none;
-  color:var(--text2);font-size:16px;cursor:pointer;
-  transition:all .15s;display:flex;align-items:center;justify-content:center;
-  font-family:var(--mono);font-weight:300;
-}
-.spot-ctrl-btn:hover{background:var(--surface2);color:var(--text);}
-.spot-ctrl-btn:disabled{opacity:.3;cursor:default;}
-.spot-ctrl-btn.minus:hover:not(:disabled){color:var(--accent);background:var(--accent-glow);}
-.spot-ctrl-btn.plus:hover:not(:disabled){color:var(--green);background:var(--green-glow);}
-.spot-ctrl-div{width:1px;height:20px;background:var(--border);}
-.spot-count-num{
-  padding:0 12px;font-family:var(--mono);font-size:11px;color:var(--text2);
-  min-width:36px;text-align:center;
-}
-.spot-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
-  gap:12px;min-height:4px;
-}
-.spot-empty-msg{
-  color:var(--muted);font-family:var(--mono);font-size:9px;letter-spacing:1px;
-  padding:8px 0;
-}
-
-/* ── SLOT CARD ──────────────────────────────────────────── */
-.slot{
-  border:1.5px dashed rgba(255,255,255,.1);
-  border-radius:var(--radius-md);min-height:220px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  cursor:pointer;transition:all .25s;background:var(--surface);
-  position:relative;overflow:hidden;gap:8px;padding:20px;
-}
-.slot:hover{border-color:rgba(239,68,68,.35);background:var(--accent-glow);transform:translateY(-3px);box-shadow:var(--shadow-md);}
-.slot-ico{font-size:36px;opacity:.2;margin-bottom:4px;}
-.slot-txt{font-family:var(--mono);font-size:9.5px;color:var(--muted);letter-spacing:2.5px;text-align:center;line-height:2;}
-.slot.filled{
-  border-style:solid;border-color:var(--border);
-  background:var(--card);cursor:default;
-  align-items:stretch;justify-content:flex-start;padding:0;min-height:220px;
-}
-.slot.filled:hover{border-color:rgba(255,255,255,.15);box-shadow:var(--shadow-md);transform:translateY(-2px);}
-.sp-hdr{
-  padding:16px 16px 12px;
-  border-bottom:1px solid var(--border);
-  display:flex;justify-content:space-between;align-items:flex-start;
-}
-.sp-name{font-family:var(--serif);font-size:18px;font-weight:700;letter-spacing:.3px;}
-.sp-meta{font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:3px;letter-spacing:.3px;}
-.sp-btns{display:flex;gap:4px;}
-.sp-btn{
-  width:24px;height:24px;border-radius:5px;border:1px solid var(--border);
-  background:transparent;color:var(--muted);font-size:11px;
-  cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;
-}
-.sp-btn:hover.edit{border-color:rgba(255,255,255,.25);color:var(--text);}
-.sp-btn:hover.del{border-color:rgba(239,68,68,.4);color:var(--accent);background:var(--accent-glow);}
-.sp-cands{padding:12px 14px 16px;display:flex;flex-direction:column;gap:8px;}
-.sp-cand{
-  display:flex;align-items:center;gap:10px;
-  padding:10px 13px;background:var(--surface);
-  border-radius:var(--radius-sm);border:1px solid var(--border);
-}
-.sp-rank{font-family:var(--serif);font-size:22px;font-weight:700;color:var(--muted);width:20px;flex-shrink:0;line-height:1;}
-.sp-rank.r1{color:var(--gold);}
-.sp-rank.r2{color:#94a3b8;}
-.sp-rank.r3{color:#a16207;}
-.sp-photo{width:42px;height:50px;border-radius:6px;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0;}
+/* SPOTLIGHT */
+.spotlight{position:relative;z-index:5;padding:16px 24px 20px;border-bottom:1px solid var(--border);background:rgba(8,8,16,.6);}
+.spot-lbl{font-family:'DM Mono',monospace;font-size:10px;color:var(--accent2);letter-spacing:3px;margin-bottom:12px;display:flex;align-items:center;gap:9px;}
+.spot-lbl::before{content:'★';color:var(--accent2);}
+.spot-lbl::after{content:'';flex:1;height:1px;background:var(--border);}
+.spot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.slot{border:2px dashed rgba(80,80,120,.5);border-radius:12px;min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .25s;background:rgba(13,13,22,.5);position:relative;overflow:hidden;}
+.slot:hover{border-color:var(--accent);background:rgba(232,56,42,.04);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.slot-num{font-family:'Bebas Neue',sans-serif;font-size:46px;color:rgba(255,255,255,.03);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;}
+.slot-ico{font-size:24px;margin-bottom:8px;opacity:.3;}
+.slot-txt{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;text-align:center;line-height:1.8;}
+.slot.filled{border-style:solid;border-color:var(--glow);background:var(--card);cursor:default;align-items:stretch;justify-content:flex-start;padding:0;}
+.slot.filled:hover{border-color:rgba(232,56,42,.4);box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.sp-hdr{padding:11px 13px 8px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;}
+.sp-name{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;}
+.sp-meta{font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:1px;}
+.sp-clear{background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:9px;cursor:pointer;padding:2px 5px;transition:all .15s;}
+.sp-clear:hover{border-color:var(--accent);color:var(--accent);}
+.sp-cands{padding:7px 11px 11px;display:flex;flex-direction:column;gap:6px;}
+.sp-cand{display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(8,8,16,.5);border-radius:6px;border:1px solid var(--border);}
+.sp-rank{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--muted);width:16px;flex-shrink:0;line-height:1;}
+.sp-rank.r1{color:var(--accent2);}.sp-rank.r2{color:#aaa;}.sp-rank.r3{color:#8B6914;}
+.sp-photo{width:34px;height:40px;border-radius:4px;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden;flex-shrink:0;}
 .sp-info{flex:1;min-width:0;}
-.sp-cname{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.sp-cparty{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px;}
+.sp-cname{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sp-cparty{font-size:8px;color:var(--muted);font-family:'DM Mono',monospace;}
 .sp-votes{text-align:right;flex-shrink:0;}
-.sp-vnum{font-family:var(--mono);font-size:14px;font-weight:700;}
-.sp-vlbl{font-family:var(--mono);font-size:9px;color:var(--muted);}
-.sp-prog{height:3px;background:var(--border);position:relative;}
-.sp-prog-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--accent));transition:width .6s;}
+.sp-vnum{font-family:'DM Mono',monospace;font-size:10px;font-weight:500;}
+.sp-vlbl{font-size:7px;color:var(--muted);}
 
-/* ── PICKER ─────────────────────────────────────────────── */
-.picker{
-  position:absolute;inset:0;z-index:50;
-  background:var(--card);border-radius:var(--radius-md);
-  display:flex;flex-direction:column;overflow:hidden;
-  animation:popIn .2s cubic-bezier(.34,1.56,.64,1);
-  box-shadow:var(--shadow-lg);border:1px solid rgba(255,255,255,.08);
-}
-@keyframes popIn{from{opacity:0;transform:scale(.95);}to{opacity:1;transform:scale(1);}}
-.pk-hdr{
-  padding:10px 12px 7px;border-bottom:1px solid var(--border);
-  display:flex;justify-content:space-between;align-items:center;flex-shrink:0;
-}
-.pk-title{font-family:var(--mono);font-size:8.5px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;}
-.pk-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0 2px;line-height:1;transition:color .15s;}
-.pk-close:hover{color:var(--accent);}
-.pk-search{
-  margin:8px 10px 4px;padding:6px 10px;
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
-  color:var(--text);font-size:10.5px;font-family:var(--sans);outline:none;
-  transition:border-color .2s;
-}
-.pk-search:focus{border-color:rgba(255,255,255,.2);}
+/* PICKER */
+.picker{position:absolute;inset:0;z-index:30;background:var(--card);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;animation:fadeUp .2s ease;}
+.pk-hdr{padding:9px 11px 6px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.pk-title{font-family:'DM Mono',monospace;font-size:9px;color:var(--accent2);letter-spacing:2px;}
+.pk-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 2px;}
+.pk-search{margin:6px 8px 2px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:4px 8px;color:var(--text);font-size:10px;font-family:'DM Sans',sans-serif;outline:none;}
 .pk-list{overflow-y:auto;flex:1;}
-.pk-item{
-  padding:7px 12px;font-size:11px;cursor:pointer;
-  display:flex;justify-content:space-between;align-items:center;
-  transition:background .1s;border-bottom:1px solid var(--border2);
-}
-.pk-item:hover{background:var(--surface);}
+.pk-item{padding:6px 11px;font-size:11px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:background .1s;}
+.pk-item:hover{background:rgba(255,255,255,.04);}
 .pk-iname{font-weight:500;}
-.pk-imeta{font-family:var(--mono);font-size:8.5px;color:var(--muted);}
+.pk-imeta{font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;}
 
-/* ── NATIONAL VOTE SHARE ────────────────────────────────── */
-.propbar{
-  position:relative;z-index:5;
-  padding:18px 28px 22px;
-  border-bottom:1px solid var(--border);
-  background:var(--surface);
-}
-.section-header{
-  display:flex;align-items:center;gap:10px;margin-bottom:16px;
-}
-.section-title{
-  font-family:var(--mono);font-size:8.5px;font-weight:500;
-  letter-spacing:3px;color:var(--muted);text-transform:uppercase;
-}
-.section-divider{flex:1;height:1px;background:var(--border);}
-.section-meta{font-family:var(--mono);font-size:8px;color:var(--muted);}
-.prop-total{font-family:var(--mono);font-size:8.5px;color:var(--muted);margin-bottom:10px;letter-spacing:.5px;}
-.prop-stack{
-  height:32px;border-radius:var(--radius-sm);overflow:hidden;
-  display:flex;background:var(--surface2);margin-bottom:14px;
-  box-shadow:inset 0 0 0 1px var(--border);
-}
-.prop-seg{height:100%;transition:width .9s ease;position:relative;cursor:default;}
-.prop-seg-tip{
-  position:absolute;bottom:110%;left:50%;transform:translateX(-50%);
-  background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);
-  padding:5px 9px;font-family:var(--mono);font-size:8.5px;white-space:nowrap;
-  pointer-events:none;opacity:0;transition:opacity .15s;z-index:20;
-  box-shadow:var(--shadow-md);
-}
-.prop-seg:hover .prop-seg-tip{opacity:1;}
-.prop-legend{display:flex;flex-wrap:wrap;gap:8px 20px;}
-.pl-item{display:flex;align-items:center;gap:8px;min-width:140px;}
-.pl-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
-.pl-info{flex:1;min-width:0;}
-.pl-name{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.pl-votes{font-family:var(--mono);font-size:10px;color:var(--muted);}
-.pl-pct{font-family:var(--mono);font-size:11.5px;font-weight:600;margin-left:auto;flex-shrink:0;}
+/* MAIN GRID */
+.grid{position:relative;z-index:5;padding:18px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;}
+.prov-div{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:4px 0;}
+.prov-lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--accent);letter-spacing:3px;flex-shrink:0;}
+.prov-line{flex:1;height:1px;background:var(--border);}
+.prov-cnt{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);flex-shrink:0;}
 
-/* ── MAIN GRID ──────────────────────────────────────────── */
-.grid{
-  position:relative;z-index:5;
-  padding:20px 28px;
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
-  gap:12px;
-}
-.prov-div{
-  grid-column:1/-1;
-  display:flex;align-items:center;gap:12px;
-  padding:8px 0 4px;
-}
-.prov-lbl{
-  font-family:var(--mono);font-size:8.5px;font-weight:600;
-  color:var(--accent);letter-spacing:3px;text-transform:uppercase;flex-shrink:0;
-}
-.prov-line{flex:1;height:1px;background:linear-gradient(90deg,rgba(239,68,68,.3),transparent);}
-.prov-cnt{font-family:var(--mono);font-size:8px;color:var(--muted);flex-shrink:0;}
+/* CARD */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .25s,transform .2s,box-shadow .25s;animation:fadeUp .3s ease both;}
+.card:hover{border-color:var(--glow);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.card.expanded{border-color:rgba(232,56,42,.35);box-shadow:0 0 0 1px rgba(232,56,42,.1),0 8px 30px rgba(0,0,0,.5);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 
-/* ── CONSTITUENCY CARD ──────────────────────────────────── */
-.card{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:var(--radius-md);
-  overflow:hidden;cursor:pointer;
-  transition:transform .2s,box-shadow .2s,border-color .2s;
-  animation:riseUp .3s ease both;
-}
-@keyframes riseUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
-.card:hover{
-  transform:translateY(-2px);
-  box-shadow:var(--shadow-md);
-  border-color:rgba(255,255,255,.12);
-}
-.card.expanded{
-  border-color:rgba(239,68,68,.3);
-  box-shadow:0 0 0 1px rgba(239,68,68,.08),var(--shadow-lg);
-}
+.card-hdr{padding:12px 14px 9px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;}
+.c-name{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;line-height:1.1;}
+.c-meta{font-size:9px;color:var(--muted);margin-top:2px;}
+.c-badges{display:flex;flex-direction:column;align-items:flex-end;gap:3px;}
+.badge{font-family:'DM Mono',monospace;font-size:8px;padding:2px 6px;border-radius:4px;letter-spacing:1px;}
+.b-cnt{background:rgba(245,166,35,.12);color:var(--accent2);border:1px solid rgba(245,166,35,.22);}
+.b-dcl{background:rgba(74,222,128,.1);color:var(--accent3);border:1px solid rgba(74,222,128,.22);}
+.b-pnd{background:rgba(90,90,122,.12);color:var(--muted);border:1px solid var(--border);}
+.b-pct{font-family:'DM Mono',monospace;font-size:8px;color:var(--muted);}
 
-.card-hdr{
-  padding:13px 15px 10px;
-  border-bottom:1px solid var(--border2);
-  display:flex;justify-content:space-between;align-items:flex-start;
-}
-.c-name{font-family:var(--serif);font-size:15px;font-weight:700;letter-spacing:.3px;line-height:1.2;}
-.c-meta{font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:3px;letter-spacing:.3px;}
-.c-badges{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
-.badge{
-  font-family:var(--mono);font-size:7.5px;
-  padding:2px 7px;border-radius:100px;letter-spacing:.5px;font-weight:500;
-}
-.b-cnt{background:var(--gold-glow);color:var(--gold);border:1px solid rgba(245,158,11,.2);}
-.b-dcl{background:var(--green-glow);color:var(--green);border:1px solid rgba(34,197,94,.2);}
-.b-pnd{background:rgba(255,255,255,.04);color:var(--muted);border:1px solid var(--border);}
-.b-pct{font-family:var(--mono);font-size:7.5px;color:var(--muted);}
+.prog{height:2px;background:var(--border);}
+.prog-fill{height:100%;background:linear-gradient(90deg,#c01010,#f5a623);transition:width .6s;}
 
-.prog{height:2px;background:var(--border2);}
-.prog-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--accent));transition:width .7s ease;}
-
-.party-list{padding:10px 15px 4px;}
-.party-row{
-  display:flex;align-items:center;gap:9px;
-  padding:6px 0;border-bottom:1px solid var(--border2);
-  position:relative;
-}
+.party-list{padding:9px 14px;}
+.party-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(30,30,48,.7);position:relative;}
 .party-row:last-child{border-bottom:none;}
-.p-rank{font-family:var(--mono);font-size:8.5px;color:var(--muted);width:12px;flex-shrink:0;}
-.party-row.r1 .p-rank{color:var(--gold);}
-.p-logo{width:15px;height:15px;object-fit:contain;flex-shrink:0;border-radius:2px;}
+.p-rank{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);width:12px;flex-shrink:0;}
+.party-row.r1 .p-rank{color:var(--accent2);}
+.p-logo{width:16px;height:16px;object-fit:contain;flex-shrink:0;border-radius:2px;}
 .p-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
 .p-info{flex:1;min-width:0;}
-.p-abbr{font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;}
-.p-full{font-family:var(--mono);font-size:7.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.p-won{
-  font-size:6.5px;padding:1px 5px;
-  background:var(--green-glow);border:1px solid rgba(34,197,94,.25);
-  border-radius:100px;color:var(--green);letter-spacing:.5px;font-weight:600;
-}
+.p-abbr{font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;}
+.p-full{font-size:8px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.p-won{font-size:7px;padding:1px 4px;background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.25);border-radius:3px;color:var(--accent3);}
 .p-votes{text-align:right;flex-shrink:0;}
-.p-vnum{font-family:var(--mono);font-size:10.5px;font-weight:500;}
-.p-vpct{font-family:var(--mono);font-size:7.5px;color:var(--muted);}
-.vbar{position:absolute;bottom:0;left:0;right:0;height:1.5px;background:transparent;border-radius:1px;}
-.vbar-fill{height:100%;border-radius:1px;transition:width .9s ease;opacity:.6;}
+.p-vnum{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;}
+.p-vpct{font-size:8px;color:var(--muted);font-family:'DM Mono',monospace;}
+.vbar{position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--border);border-radius:1px;}
+.vbar-fill{height:100%;border-radius:1px;transition:width .8s;}
 
-.card-ftr{
-  padding:6px 15px 10px;
-  display:flex;justify-content:space-between;align-items:center;
-}
-.exp-hint{font-family:var(--mono);font-size:7.5px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
-.exp-icon{font-size:11px;color:var(--muted);transition:transform .3s;}
+.card-ftr{padding:5px 14px 9px;display:flex;justify-content:space-between;align-items:center;}
+.exp-hint{font-size:8px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.exp-icon{font-size:12px;color:var(--muted);transition:transform .3s;}
 .card.expanded .exp-icon{transform:rotate(180deg);}
 
-/* EXPANDED DETAILS */
-.exp-parties{
-  display:none;
-  padding:10px 15px 12px;
-  border-top:1px solid var(--border2);
-  background:var(--surface2);
-  animation:riseUp .2s ease;
-}
-body.light .exp-parties{background:var(--surface);}
-.card.expanded .exp-parties{display:block;}
-.exp-p-row{
-  display:flex;align-items:center;gap:7px;
-  padding:5px 0;border-bottom:1px solid var(--border2);
-}
-.exp-p-row:last-child{border-bottom:none;}
-.exp-p-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0;}
-.exp-p-short{font-family:var(--mono);font-size:9.5px;font-weight:600;min-width:38px;}
-.exp-p-name{font-size:8.5px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.exp-p-votes{font-family:var(--mono);font-size:9.5px;font-weight:600;min-width:46px;text-align:right;}
-.exp-p-bar{height:2px;border-radius:1px;margin-top:3px;opacity:.5;transition:width .8s;}
-.exp-p-won{
-  font-family:var(--mono);font-size:6.5px;
-  background:var(--green-glow);border:1px solid rgba(34,197,94,.25);
-  border-radius:100px;padding:1px 5px;color:var(--green);font-weight:600;margin-left:4px;
-}
+/* CANDIDATES */
+.cand-sec{display:none;border-top:1px solid var(--border);animation:fadeUp .25s ease;}
+.card.expanded .cand-sec{display:block;}
+.cand-hdr{padding:10px 14px 7px;display:flex;justify-content:space-between;align-items:center;}
+.cand-title{font-family:'DM Mono',monospace;font-size:9px;color:var(--accent);letter-spacing:2px;}
+.cand-grid{padding:0 14px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:7px;}
+.cand-card{background:rgba(8,8,16,.6);border:1px solid var(--border);border-radius:7px;padding:9px;display:flex;gap:9px;align-items:flex-start;transition:border-color .2s;}
+.cand-card:hover{border-color:var(--glow);}
+.cand-card.winner{border-color:rgba(74,222,128,.4);background:rgba(74,222,128,.04);}
+.cand-av{width:34px;height:42px;border-radius:5px;background:var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden;border:1px solid rgba(255,255,255,.06);position:relative;}
+.cand-av img{width:100%;height:100%;object-fit:cover;object-position:top center;}
+.cand-av img.lazy{opacity:0;transition:opacity .3s;}
+.cand-av img.lazy.loaded{opacity:1;}
+.cand-info{flex:1;min-width:0;}
+.cand-name{font-size:11px;font-weight:600;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cand-party{font-size:8px;color:var(--muted);margin-bottom:4px;display:flex;align-items:center;gap:3px;}
+.cand-stats{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.cstat .v{font-family:'DM Mono',monospace;font-size:10px;font-weight:500;}
+.cstat .l{font-size:7px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.tag-won{font-size:7px;padding:1px 4px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.25);border-radius:3px;color:var(--accent3);letter-spacing:1px;}
+.tag-lead{font-size:7px;padding:1px 4px;background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.25);border-radius:3px;color:var(--accent2);letter-spacing:1px;}
+.tag-trail{font-size:7px;padding:1px 4px;background:rgba(90,90,122,.1);border:1px solid var(--border);border-radius:3px;color:var(--muted);letter-spacing:1px;}
+.cand-loading{padding:8px 14px 12px;color:var(--muted);font-size:10px;font-family:'DM Mono',monospace;display:flex;align-items:center;gap:7px;}
 
-/* ── SKELETON ───────────────────────────────────────────── */
-.sk{
-  background:linear-gradient(90deg,var(--surface2) 25%,var(--surface) 50%,var(--surface2) 75%);
-  background-size:200% 100%;
-  animation:shimmer 1.6s infinite;border-radius:3px;
-}
-@keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+/* SKELETON */
+.sk{background:linear-gradient(90deg,var(--border) 25%,var(--glow) 50%,var(--border) 75%);background-size:200% 100%;animation:sksh 1.5s infinite;border-radius:3px;}
+@keyframes sksh{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
 
-/* ── STATUS BADGES ──────────────────────────────────────── */
-.tag-won{font-size:6.5px;padding:1px 5px;background:var(--green-glow);border:1px solid rgba(34,197,94,.25);border-radius:100px;color:var(--green);letter-spacing:.5px;}
-.tag-lead{font-size:6.5px;padding:1px 5px;background:var(--gold-glow);border:1px solid rgba(245,158,11,.25);border-radius:100px;color:var(--gold);letter-spacing:.5px;}
-.tag-trail{font-size:6.5px;padding:1px 5px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:100px;color:var(--muted);letter-spacing:.5px;}
+/* SERVER OFFLINE BANNER */
+#offlineBanner{display:none;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#111;border:1px solid var(--accent);border-radius:8px;padding:10px 16px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text);z-index:9999;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.6);max-width:380px;width:90%;}
 
-/* ── OFFLINE BANNER ─────────────────────────────────────── */
-#offlineBanner{
-  display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-  background:var(--card);border:1px solid rgba(239,68,68,.3);border-radius:var(--radius-md);
-  padding:12px 20px;font-family:var(--mono);font-size:9.5px;color:var(--text);
-  z-index:9999;text-align:center;box-shadow:var(--shadow-lg);max-width:360px;width:90%;
-  animation:popIn .3s ease;
-}
-
-/* ── SEARCH ROW MOBILE ──────────────────────────────────── */
+/* SEARCH ROW (mobile only — shown via media query) */
 .search-row{display:none;}
 
-/* ── FOOTER ─────────────────────────────────────────────── */
-footer{
-  position:relative;z-index:5;
-  text-align:center;padding:20px;
-  border-top:1px solid var(--border);
-  font-family:var(--mono);font-size:8.5px;color:var(--muted);
-  letter-spacing:1.5px;margin-top:8px;
-}
-footer .accent{color:var(--gold);}
+/* PROPORTIONAL VOTE TRACKER */
+.propbar{position:relative;z-index:5;padding:16px 24px 20px;border-bottom:1px solid var(--border);background:rgba(8,8,16,.7);}
+.prop-lbl{font-family:'DM Mono',monospace;font-size:10px;color:var(--accent2);letter-spacing:3px;margin-bottom:14px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+.prop-sub{color:var(--muted);font-size:9px;letter-spacing:1px;}
+.prop-line{flex:1;height:1px;background:var(--border);min-width:20px;}
+.prop-total{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:8px;letter-spacing:1px;}
+/* Stacked bar */
+.prop-stack{height:28px;border-radius:6px;overflow:hidden;display:flex;background:var(--border);margin-bottom:12px;}
+.prop-seg{height:100%;transition:width .8s ease;position:relative;cursor:default;}
+.prop-seg:first-child{border-radius:6px 0 0 6px;}
+.prop-seg:last-child{border-radius:0 6px 6px 0;}
+.prop-seg-tip{position:absolute;bottom:110%;left:50%;transform:translateX(-50%);background:rgba(10,10,20,.95);border:1px solid var(--border);border-radius:5px;padding:4px 8px;font-family:'DM Mono',monospace;font-size:9px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:20;}
+.prop-seg:hover .prop-seg-tip{opacity:1;}
+/* Legend grid */
+.prop-legend{display:flex;flex-wrap:wrap;gap:8px 16px;}
+.pl-item{display:flex;align-items:center;gap:6px;min-width:130px;}
+.pl-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+.pl-info{flex:1;min-width:0;}
+.pl-name{font-size:10px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pl-votes{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);}
+.pl-pct{font-family:'DM Mono',monospace;font-size:10px;font-weight:600;margin-left:auto;flex-shrink:0;}
 
-/* ── MOBILE ─────────────────────────────────────────────── */
 @media(max-width:860px){
-  header{padding:0 16px;height:50px;}
-  .h-brand-name{font-size:15px;}
-  #lastUpd{display:none;}
-  .hbtn{height:28px;font-size:8.5px;padding:0 10px;}
-  .hbtn.icon-btn{width:28px;}
-
-  .hero{grid-template-columns:1fr;}
-  .h-side{width:100%;padding:14px 18px;gap:16px;justify-content:center;}
-  .h-left-side{background:linear-gradient(180deg,rgba(30,58,138,.6),rgba(37,99,235,.2));border-right:none;border-bottom:1px solid var(--border);}
-  .h-right-side{background:linear-gradient(0deg,rgba(127,29,29,.6),rgba(185,28,28,.2));border-left:none;border-top:1px solid var(--border);flex-direction:row;}
-  .h-side::after{display:none;}
-  .h-person{flex-direction:row;align-items:center;}
-  .h-photo{width:52px;height:62px;}
-  .h-name{text-align:left;font-size:11px;}
-  .h-center{padding:16px 20px;order:-1;}
-  .h-title-main{font-size:22px;}
-  .h-tagline{font-size:7px;}
-
-  .statsbar{padding:0 16px;}
-  .stat-item{padding:10px 16px;}
-  .stat-num{font-size:20px;}
-
-  .filters{padding:8px 16px;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;}
-  .flbl{display:none;}
-  .fbtn{height:28px;padding:0 12px;font-size:10px;border-radius:100px;}
-  .sbox{display:none;}
-  .search-row{display:flex;padding:6px 16px 8px;border-bottom:1px solid var(--border);background:var(--surface);}
-  .search-row .sbox{display:block;width:100%;margin:0;border-radius:100px;height:32px;}
-
-  .tally{padding:12px 16px 14px;}
-  .spotlight{padding:14px 16px 18px;}
-  .spot-grid{grid-template-columns:1fr;}
-  .slot{min-height:200px;}
-  .slot.filled{min-height:200px;}
-  .propbar{padding:14px 16px 18px;}
-  .grid{padding:14px 16px;grid-template-columns:1fr;gap:10px;}
-  .card-hdr{padding:11px 13px 8px;}
-  .c-name{font-size:14px;}
-  .party-list{padding:8px 13px 4px;}
-  .card-ftr{padding:5px 13px 9px;}
-  footer{font-size:8px;padding:14px;}
+  .propbar{padding:12px 14px 16px;}
+  .prop-stack{height:22px;}
+  .prop-legend{gap:6px 10px;}
+  .pl-item{min-width:110px;}
+  .pl-name{font-size:9px;}
+  .pl-votes{font-size:8px;}
 }
 @media(max-width:480px){
-  header{padding:0 12px;height:46px;}
-  .h-brand-name{font-size:14px;}
-  .h-brand-sub{display:none;}
-  .live-chip{padding:3px 8px;font-size:7.5px;}
-  .hbtn span{display:none;}
-  .h-title-main{font-size:18px;}
-  .h-photo{width:44px;height:52px;}
-  .grid{padding:10px 12px;gap:8px;}
+  .prop-legend{gap:5px 8px;}
+  .pl-item{min-width:calc(50% - 4px);}
 }
+
+/* FOOTER */
+footer{position:relative;z-index:5;text-align:center;padding:16px;border-top:1px solid var(--border);font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:6px;}
+footer span{color:var(--accent2);}
+
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--glow);border-radius:2px;}
+
+/* ── MOBILE RESPONSIVE ──────────────────────────────────────── */
+@media(max-width:860px){
+  /* Header */
+  header{padding:10px 14px;gap:6px;}
+  .h-title h1{font-size:16px;}
+  .h-right{gap:6px;}
+  #lastUpd{display:none;}
+  .hbtn{padding:5px 9px;font-size:9px;}
+
+  /* Hero — stack vertically on very small screens */
+  .hero{flex-direction:column;min-height:auto;}
+  .h-side{flex:0 0 auto;width:100%;padding:12px 16px;gap:20px;justify-content:center;}
+  .h-left-side{background:linear-gradient(180deg,#06205e,#0e3fc4 55%,#091e6a);}
+  .h-right-side{background:linear-gradient(180deg,#5c0000,#c01010 55%,#7a0505);flex-direction:row;}
+  .h-side::after{display:none;}
+  .h-person{flex-direction:row;align-items:center;gap:10px;}
+  .h-photo{width:48px;height:56px;}
+  .h-name{text-align:left;}
+  .h-party-tag{align-self:flex-start;}
+  .h-vbox{min-width:60px;}
+  .h-vnum{font-size:16px;}
+  .h-center{padding:12px 16px;order:-1;}
+  .h-title-text{font-size:22px;letter-spacing:3px;}
+  .h-sub{font-size:8px;letter-spacing:2px;}
+
+  /* Summary bar */
+  .sumbar{padding:8px 14px;gap:14px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .ss .v{font-size:18px;}
+  .ss .l{font-size:8px;}
+
+  /* Filters — horizontal scroll for province buttons */
+  .filters{padding:8px 14px 8px;gap:6px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-bottom:none;}
+  .filters::-webkit-scrollbar{display:none;}
+  .flbl{display:none;}
+  .fbtn{padding:5px 11px;font-size:10px;border-radius:20px;flex-shrink:0;white-space:nowrap;min-height:32px;display:flex;align-items:center;}
+  .sbox{display:none;} /* hidden inline; shown in .search-row below */
+  .search-row{display:flex;padding:4px 14px 8px;border-bottom:1px solid var(--border);background:rgba(8,8,16,.5);}
+  .search-row .sbox{display:block;width:100%;margin:0;}
+
+  /* Spotlight */
+  .spotlight{padding:12px 14px 16px;}
+  .spot-grid{grid-template-columns:1fr;}
+  .slot{min-height:140px;}
+
+  /* Main grid */
+  .grid{padding:10px 14px;grid-template-columns:1fr;gap:10px;}
+  .card-hdr{padding:10px 12px 8px;}
+  .c-name{font-size:15px;}
+  .party-list{padding:7px 12px;}
+  .card-ftr{padding:4px 12px 8px;}
+  .cand-grid{grid-template-columns:1fr;padding:0 12px 10px;}
+  .cand-card{padding:8px;}
+
+  /* Touch comfort */
+  .card{-webkit-tap-highlight-color:transparent;}
+  .hbtn{min-height:32px;}
+
+  /* Offline banner */
+  #offlineBanner{bottom:12px;font-size:9px;}
+
+  /* Footer */
+  footer{font-size:9px;padding:12px;}
+}
+
+@media(max-width:480px){
+  /* Compact header */
+  header{padding:8px 12px;}
+  .h-title h1{font-size:14px;letter-spacing:1px;}
+  .live-pill{padding:3px 7px;font-size:8px;}
+  .hbtn span{display:none;}
+
+  /* Hero even more compact */
+  .h-title-text{font-size:18px;letter-spacing:2px;}
+  .h-photo{width:40px;height:48px;}
+  .h-vnum{font-size:14px;}
+  .h-center{padding:10px 12px;}
+
+  /* Tighter grid */
+  .grid{padding:8px 10px;gap:8px;}
+  .sumbar{padding:6px 10px;gap:10px;}
+
+  /* Cards */
+  .c-name{font-size:14px;}
+  .p-abbr{font-size:10px;}
+  .p-vnum{font-size:10px;}
+}
+
 </style>
 </head>
 <body>
 
-<!-- LOADER -->
 <div id="loader">
-  <div class="ld-flag">🏔️</div>
+  <div class="ld-icon">🏔️</div>
   <div class="ld-title">Nepal Chunab 2082</div>
-  <div class="ld-sub" data-t="loading">Loading live results</div>
+  <div class="ld-sub" data-t="loading">Loading live results...</div>
   <div class="ld-bar"><div class="ld-fill"></div></div>
 </div>
 
-<!-- HEADER -->
 <header>
-  <div class="h-brand">
-    <div class="h-brand-flag">🇳🇵</div>
-    <div class="h-brand-text">
-      <div class="h-brand-name">Nepal Chunab 2082</div>
-      <div class="h-brand-sub" data-t="hSubtitle">House of Representatives · Live</div>
+  <div class="h-left">
+    <span style="font-size:24px">🇳🇵</span>
+    <div class="h-title">
+      <h1>Nepal Chunab 2082</h1>
+      <span data-t="hSubtitle">House of Representatives · Live</span>
     </div>
   </div>
-  <div class="h-controls">
-    <div class="live-chip"><div class="live-dot"></div>LIVE</div>
-    <span id="liveClock" style="font-family:var(--mono);font-size:11px;color:var(--text2);letter-spacing:.5px;min-width:72px;text-align:right;"></span>
+  <div class="h-right">
+    <div class="live-pill"><div class="live-dot"></div>LIVE</div>
     <span id="lastUpd">—</span>
     <button class="hbtn" onclick="toggleLang()" id="langBtn">नेपाली</button>
-    <button class="hbtn icon-btn" onclick="toggleTheme()" id="themeBtn" title="Light/Dark">🌙</button>
+    <button class="hbtn" onclick="doRefresh()">↻ <span data-t="refresh">Refresh</span></button>
   </div>
 </header>
 
-<!-- STATUS BAR -->
 <div id="srvBar"><div class="srv-dot" id="srvDot"></div><span id="srvMsg">Connecting…</span></div>
 
-<!-- HERO -->
 <div class="hero">
   <div class="h-side h-left-side">
+    <div class="sweep"></div>
     <div class="h-person">
       <div class="h-photo"><img src="data:image/jpeg;base64,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" alt="Balendra Shah"/></div>
-      <div>
-        <div class="h-name">Balendra Shah</div>
-        <div class="h-party-badge" style="margin-top:5px"><img class="h-party-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoAgMAAADxkFD+AAAACVBMVEVMaXEAru8Dru2TDLi+AAAAA3RSTlMA/n1e/QVsAAAAV0lEQVR42mNgGCSAkZACthkMDAwMzAwMDAz/vjxgYGBgYmBgYBARwaZWNIQBpgACMJiMcKYDNgWMEHEmBgaG/wwMB2CizBfgon8NHLBYzOQAN+wfTYMLAK/dCx0s2uRmAAAAAElFTkSuQmCC" alt="RSP"/>RSP</div>
-        <div class="h-stats" style="margin-top:8px">
-          <div class="h-votes" id="balenV">—</div>
-          <div class="h-votes-lbl">VOTES</div>
-          <div class="h-status" id="balenS"></div>
-        </div>
+      <div class="h-name">Balendra Shah</div>
+      <div class="h-party-tag"><img class="h-party-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoAgMAAADxkFD+AAAACVBMVEVMaXEAru8Dru2TDLi+AAAAA3RSTlMA/n1e/QVsAAAAV0lEQVR42mNgGCSAkZACthkMDAwMzAwMDAz/vjxgYGBgYmBgYBARwaZWNIQBpgACMJiMcKYDNgWMEHEmBgaG/wwMB2CizBfgon8NHLBYzOQAN+wfTYMLAK/dCx0s2uRmAAAAAElFTkSuQmCC" alt="RSP"/>RSP</div>
+      <div class="h-vbox">
+        <div class="h-vnum" id="balenV">—</div>
+        <div class="h-vlbl">VOTES</div>
+        <div class="h-vstatus" id="balenS"></div>
       </div>
     </div>
   </div>
-
   <div class="h-center">
-    <div class="h-title-main">Nepal Chunab 2082</div>
-    <div class="h-tagline" data-t="hSub">House of Representatives · 165 Seats</div>
-    <div class="h-date-badge" data-t="hDate">Chaitra 2082 · March 2026</div>
+    <div class="h-title-text">Nepal Chunab 2082</div>
+    <div class="h-sub" data-t="hSub">House of Representatives · All 165 Seats</div>
+    <div class="h-date" data-t="hDate">Chaitra 2082 · March 2026</div>
   </div>
-
   <div class="h-side h-right-side">
+    <div class="sweep"></div>
     <div class="h-person">
       <div class="h-photo"><img src="data:image/jpeg;base64,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" alt="KP Sharma Oli"/></div>
-      <div>
-        <div class="h-name">KP Sharma Oli</div>
-        <div class="h-party-badge" style="margin-top:5px"><img class="h-party-logo" src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDACAWGBwYFCAcGhwkIiAmMFA0MCwsMGJGSjpQdGZ6eHJmcG6AkLicgIiuim5woNqirr7EztDOfJri8uDI8LjKzsb/2wBDASIkJDAqMF40NF7GhHCExsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsb/wAARCAAoACgDASIAAhEBAxEB/8QAGgAAAwADAQAAAAAAAAAAAAAAAAIFAQMEBv/EACQQAAICAQMFAAMBAAAAAAAAAAECAAMRBBMhEjEyQVEUQmGB/8QAGAEAAwEBAAAAAAAAAAAAAAAAAQIDBAX/xAAbEQADAQEBAQEAAAAAAAAAAAAAAQIRAwQhEv/aAAwDAQACEQMRAD8AvkgDJ7RLbRUFY+JOCZi63aGWQlfZHOJL1GoWpWVWLVt4r8it4V583bKe8PydvPHTmNXaLC/T4qcZ+yANdYGzgePT/k7NNqeusIj7afufcVXpa/O5WleE1U2VsOmrJUe8cQlDK1gmoFwUlbEVf6JC1uTd3B49T0F1dbAtbkgesyZqtN11l3XbGcIPcna01+e1L+kqdGizunAB499ox0Nitgkdszr0+nWtVLKWrbu3yTSemvp0n8/CjQbgoD1oo/hhHqq2hhXJX0DziEujlU9ZsmuyoWOhblVOcfTCEIE8F2R+SbMcdOI1VQqVlHiTkCEIMC6Y4AAwO0IQhFP/2Q==" alt="UML"/>UML</div>
-        <div class="h-stats" style="margin-top:8px">
-          <div class="h-votes" id="oliV">—</div>
-          <div class="h-votes-lbl">VOTES</div>
-          <div class="h-status" id="oliS"></div>
-        </div>
+      <div class="h-name">KP Sharma Oli</div>
+      <div class="h-party-tag"><img class="h-party-logo" src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDACAWGBwYFCAcGhwkIiAmMFA0MCwsMGJGSjpQdGZ6eHJmcG6AkLicgIiuim5woNqirr7EztDOfJri8uDI8LjKzsb/2wBDASIkJDAqMF40NF7GhHCExsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsb/wAARCAAoACgDASIAAhEBAxEB/8QAGgAAAwADAQAAAAAAAAAAAAAAAAIFAQMEBv/EACQQAAICAQMFAAMBAAAAAAAAAAECAAMRBBMhEjEyQVEUQmGB/8QAGAEAAwEBAAAAAAAAAAAAAAAAAQIDBAX/xAAbEQADAQEBAQEAAAAAAAAAAAAAAQIRAwQhEv/aAAwDAQACEQMRAD8AvkgDJ7RLbRUFY+JOCZi63aGWQlfZHOJL1GoWpWVWLVt4r8it4V583bKe8PydvPHTmNXaLC/T4qcZ+yANdYGzgePT/k7NNqeusIj7afufcVXpa/O5WleE1U2VsOmrJUe8cQlDK1gmoFwUlbEVf6JC1uTd3B49T0F1dbAtbkgesyZqtN11l3XbGcIPcna01+e1L+kqdGizunAB499ox0Nitgkdszr0+nWtVLKWrbu3yTSemvp0n8/CjQbgoD1oo/hhHqq2hhXJX0DziEujlU9ZsmuyoWOhblVOcfTCEIE8F2R+SbMcdOI1VQqVlHiTkCEIMC6Y4AAwO0IQhFP/2Q==" alt="UML"/>UML</div>
+      <div class="h-vbox">
+        <div class="h-vnum" id="oliV">—</div>
+        <div class="h-vlbl">VOTES</div>
+        <div class="h-vstatus" id="oliS"></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- STATS BAR -->
-<div class="statsbar">
-  <div class="stat-item"><div class="stat-num" id="stTotal">165</div><div class="stat-lbl" data-t="constituencies">Constituencies</div></div>
-  <div class="stat-item"><div class="stat-num" id="stCount" style="color:var(--gold)">—</div><div class="stat-lbl" data-t="counting">Counting</div></div>
-  <div class="stat-item"><div class="stat-num" id="stDecl" style="color:var(--green)">—</div><div class="stat-lbl" data-t="declared">Declared</div></div>
-  <div class="stat-item"><div class="stat-num" id="stPend" style="color:var(--muted)">—</div><div class="stat-lbl" data-t="pending">Pending</div></div>
-  <div class="stat-item"><div class="stat-num" id="stVotes">—</div><div class="stat-lbl" data-t="votesCounted">Votes Counted</div></div>
+<div class="sumbar">
+  <div class="ss"><div class="v" id="stTotal">165</div><div class="l" data-t="constituencies">Constituencies</div></div>
+  <div class="sdiv"></div>
+  <div class="ss"><div class="v" id="stCount" style="color:var(--accent2)">—</div><div class="l" data-t="counting">Counting</div></div>
+  <div class="sdiv"></div>
+  <div class="ss"><div class="v" id="stDecl" style="color:var(--accent3)">—</div><div class="l" data-t="declared">Declared</div></div>
+  <div class="sdiv"></div>
+  <div class="ss"><div class="v" id="stPend" style="color:var(--muted)">—</div><div class="l" data-t="pending">Pending</div></div>
+  <div class="sdiv"></div>
+  <div class="ss"><div class="v" id="stVotes">—</div><div class="l" data-t="votesCounted">Votes Counted</div></div>
 </div>
 
-<!-- FILTERS -->
 <div class="filters">
   <span class="flbl" data-t="province">Province</span>
   <button class="fbtn active" onclick="setFilter('all',this)" data-t="all">All</button>
@@ -797,71 +423,41 @@ footer .accent{color:var(--gold);}
   <button class="fbtn" onclick="setFilter('5',this)" data-prov="5">Lumbini</button>
   <button class="fbtn" onclick="setFilter('6',this)" data-prov="6">Karnali</button>
   <button class="fbtn" onclick="setFilter('7',this)" data-prov="7" data-t="sudur">Sudurpa.</button>
-  <input class="sbox" id="searchBox" placeholder="Search region or district…" oninput="renderGrid();saveSettings()" data-tp="searchPlaceholder"/>
+  <input class="sbox" id="searchBox" placeholder="🔍 Search region…" oninput="renderGrid()" data-tp="searchPlaceholder"/>
 </div>
 <div class="search-row">
-  <input class="sbox" id="searchBoxMobile" placeholder="Search region…" oninput="document.getElementById('searchBox').value=this.value;renderGrid();saveSettings()" data-tp="searchPlaceholderLong"/>
+  <input class="sbox" id="searchBoxMobile" placeholder="🔍 Search region or district…" oninput="document.getElementById('searchBox').value=this.value;renderGrid()" data-tp="searchPlaceholderLong"/>
 </div>
 
-<!-- SEAT TALLY -->
-<div class="tally" id="tallySection">
-  <div class="tally-header">
-    <div class="tally-title">Seats Won</div>
-    <div class="tally-divider"></div>
-  </div>
-  <div class="tally-row" id="tallyRow">
-    <div style="color:var(--muted);font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:4px 0">Waiting for declared results…</div>
-  </div>
-</div>
-
-<!-- SPOTLIGHT -->
 <div class="spotlight">
-  <div class="spot-header">
-    <div class="spot-title">Spotlight</div>
-    <div class="spot-divider"></div>
-    <div class="spot-counter-group">
-      <button class="spot-ctrl-btn minus" id="spotMinus" onclick="removeLastSlot()" title="Remove slot">−</button>
-      <div class="spot-ctrl-div"></div>
-      <div class="spot-count-num" id="spotCount">0</div>
-      <div class="spot-ctrl-div"></div>
-      <button class="spot-ctrl-btn plus" id="spotPlus" onclick="addSpotSlot()" title="Add slot">+</button>
-    </div>
+  <div class="spot-lbl" data-t="spotlight">Spotlight — Pin up to 3 key races</div>
+  <div class="spot-grid">
+    <div class="slot" id="slot0" onclick="openPicker(0)"><div class="slot-num">1</div><div class="slot-ico">📍</div><div class="slot-txt" data-t="selectRegion">SELECT REGION</div></div>
+    <div class="slot" id="slot1" onclick="openPicker(1)"><div class="slot-num">2</div><div class="slot-ico">📍</div><div class="slot-txt" data-t="selectRegion">SELECT REGION</div></div>
+    <div class="slot" id="slot2" onclick="openPicker(2)"><div class="slot-num">3</div><div class="slot-ico">📍</div><div class="slot-txt" data-t="selectRegion">SELECT REGION</div></div>
   </div>
-  <div class="spot-grid" id="spotGrid"></div>
 </div>
 
-<!-- NATIONAL VOTE SHARE -->
+<!-- ── NATIONAL VOTE SHARE ─────────────────────────────────── -->
 <div class="propbar" id="propSection">
-  <div class="section-header">
-    <div class="section-title" data-t="natVoteShare">📊 National Vote Share</div>
-    <div class="section-divider"></div>
-    <div class="section-meta" id="propMeta">across all constituencies</div>
-  </div>
+  <div class="prop-lbl"><span data-t="natVoteShare">📊 NATIONAL VOTE SHARE</span> <span class="prop-sub" id="propMeta">— across all constituencies</span><div class="prop-line"></div></div>
   <div class="prop-total" id="propTotalRow"></div>
   <div class="prop-stack" id="propStack"></div>
   <div class="prop-legend" id="propLegend"></div>
 </div>
 
-<!-- MAIN GRID -->
 <div class="grid" id="mainGrid"></div>
 
-<footer>
-  <span class="accent">Nepal Chunab 2082</span> &nbsp;·&nbsp;
-  <span data-t="dataSource">Data: Election Commission of Nepal</span> &nbsp;·&nbsp;
-  <span data-t="madeUsing">Made using Claude</span> by C-REE &nbsp;·&nbsp; © 2082
-</footer>
+<footer><span data-t="madeUsing">Made using</span> <span>Claude</span> by C-REE &nbsp;·&nbsp; <span data-t="dataSource">Data: Election Commission of Nepal</span> &nbsp;·&nbsp; © 2082</footer>
 
 <div id="offlineBanner">
-  <div style="color:var(--accent);font-weight:600;margin-bottom:4px">⚠ Server Unavailable</div>
-  <div style="color:var(--muted);font-size:8.5px">Starting up — please wait a moment and refresh</div>
+  <div style="color:var(--accent);font-weight:600;margin-bottom:3px">⚠ Server Unavailable</div>
+  <div style="color:var(--muted);font-size:9px">The data server is starting up — please wait a moment and refresh</div>
 </div>
 
 <script>
 // ── LANGUAGE / i18n ─────────────────────────────────────────
 let lang = 'en';
-
-// ── LOCALSTORAGE — see spotlight JS section below ──────────
-
 
 const STRINGS = {
   en: {
@@ -1017,33 +613,26 @@ function applyLang() {
   renderPropBar();
 }
 
-function toggleTheme() {
-  const isLight = document.body.classList.toggle('light');
-  document.getElementById('themeBtn').textContent = isLight ? '☀️' : '🌙';
-  saveSettings();
-}
-
 function toggleLang() {
   lang = lang === 'en' ? 'ne' : 'en';
   applyLang();
-  saveSettings();
 }
 
 // ── DATA ─────────────────────────────────────────────────────
-const MASTER = [{"id": "1", "name": "Morang - 1", "district": "Morang", "province": "1", "province_name": "Koshi"}, {"id": "2", "name": "Morang - 2", "district": "Morang", "province": "1", "province_name": "Koshi"}, {"id": "3", "name": "Morang - 3", "district": "Morang", "province": "1", "province_name": "Koshi"}, {"id": "4", "name": "Morang - 4", "district": "Morang", "province": "1", "province_name": "Koshi"}, {"id": "5", "name": "Morang - 5", "district": "Morang", "province": "1", "province_name": "Koshi"}, {"id": "6", "name": "Morang - 6", "district": "Morang", "province": "1", "province_name": "Koshi"}, {"id": "7", "name": "Jhapa - 1", "district": "Jhapa", "province": "1", "province_name": "Koshi"}, {"id": "8", "name": "Jhapa - 2", "district": "Jhapa", "province": "1", "province_name": "Koshi"}, {"id": "9", "name": "Jhapa - 3", "district": "Jhapa", "province": "1", "province_name": "Koshi"}, {"id": "10", "name": "Jhapa - 4", "district": "Jhapa", "province": "1", "province_name": "Koshi"}, {"id": "11", "name": "Jhapa - 5", "district": "Jhapa", "province": "1", "province_name": "Koshi"}, {"id": "12", "name": "Sunsari - 1", "district": "Sunsari", "province": "1", "province_name": "Koshi"}, {"id": "13", "name": "Sunsari - 2", "district": "Sunsari", "province": "1", "province_name": "Koshi"}, {"id": "14", "name": "Sunsari - 3", "district": "Sunsari", "province": "1", "province_name": "Koshi"}, {"id": "15", "name": "Sunsari - 4", "district": "Sunsari", "province": "1", "province_name": "Koshi"}, {"id": "16", "name": "Ilam - 1", "district": "Ilam", "province": "1", "province_name": "Koshi"}, {"id": "17", "name": "Ilam - 2", "district": "Ilam", "province": "1", "province_name": "Koshi"}, {"id": "18", "name": "Udayapur - 1", "district": "Udayapur", "province": "1", "province_name": "Koshi"}, {"id": "19", "name": "Udayapur - 2", "district": "Udayapur", "province": "1", "province_name": "Koshi"}, {"id": "20", "name": "Taplejung", "district": "Taplejung", "province": "1", "province_name": "Koshi"}, {"id": "21", "name": "Panchthar", "district": "Panchthar", "province": "1", "province_name": "Koshi"}, {"id": "22", "name": "Sankhuwasabha", "district": "Sankhuwasabha", "province": "1", "province_name": "Koshi"}, {"id": "23", "name": "Tehrathum", "district": "Tehrathum", "province": "1", "province_name": "Koshi"}, {"id": "24", "name": "Bhojpur", "district": "Bhojpur", "province": "1", "province_name": "Koshi"}, {"id": "25", "name": "Dhankuta", "district": "Dhankuta", "province": "1", "province_name": "Koshi"}, {"id": "26", "name": "Solukhumbu", "district": "Solukhumbu", "province": "1", "province_name": "Koshi"}, {"id": "27", "name": "Khotang", "district": "Khotang", "province": "1", "province_name": "Koshi"}, {"id": "28", "name": "Okhaldhunga", "district": "Okhaldhunga", "province": "1", "province_name": "Koshi"}, {"id": "29", "name": "Saptari - 1", "district": "Saptari", "province": "2", "province_name": "Madhesh"}, {"id": "30", "name": "Saptari - 2", "district": "Saptari", "province": "2", "province_name": "Madhesh"}, {"id": "31", "name": "Saptari - 3", "district": "Saptari", "province": "2", "province_name": "Madhesh"}, {"id": "32", "name": "Saptari - 4", "district": "Saptari", "province": "2", "province_name": "Madhesh"}, {"id": "33", "name": "Siraha - 1", "district": "Siraha", "province": "2", "province_name": "Madhesh"}, {"id": "34", "name": "Siraha - 2", "district": "Siraha", "province": "2", "province_name": "Madhesh"}, {"id": "35", "name": "Siraha - 3", "district": "Siraha", "province": "2", "province_name": "Madhesh"}, {"id": "36", "name": "Siraha - 4", "district": "Siraha", "province": "2", "province_name": "Madhesh"}, {"id": "37", "name": "Dhanusha - 1", "district": "Dhanusha", "province": "2", "province_name": "Madhesh"}, {"id": "38", "name": "Dhanusha - 2", "district": "Dhanusha", "province": "2", "province_name": "Madhesh"}, {"id": "39", "name": "Dhanusha - 3", "district": "Dhanusha", "province": "2", "province_name": "Madhesh"}, {"id": "40", "name": "Dhanusha - 4", "district": "Dhanusha", "province": "2", "province_name": "Madhesh"}, {"id": "41", "name": "Mahottari - 1", "district": "Mahottari", "province": "2", "province_name": "Madhesh"}, {"id": "42", "name": "Mahottari - 2", "district": "Mahottari", "province": "2", "province_name": "Madhesh"}, {"id": "43", "name": "Mahottari - 3", "district": "Mahottari", "province": "2", "province_name": "Madhesh"}, {"id": "44", "name": "Mahottari - 4", "district": "Mahottari", "province": "2", "province_name": "Madhesh"}, {"id": "45", "name": "Sarlahi - 1", "district": "Sarlahi", "province": "2", "province_name": "Madhesh"}, {"id": "46", "name": "Sarlahi - 2", "district": "Sarlahi", "province": "2", "province_name": "Madhesh"}, {"id": "47", "name": "Sarlahi - 3", "district": "Sarlahi", "province": "2", "province_name": "Madhesh"}, {"id": "48", "name": "Sarlahi - 4", "district": "Sarlahi", "province": "2", "province_name": "Madhesh"}, {"id": "49", "name": "Rautahat - 1", "district": "Rautahat", "province": "2", "province_name": "Madhesh"}, {"id": "50", "name": "Rautahat - 2", "district": "Rautahat", "province": "2", "province_name": "Madhesh"}, {"id": "51", "name": "Rautahat - 3", "district": "Rautahat", "province": "2", "province_name": "Madhesh"}, {"id": "52", "name": "Rautahat - 4", "district": "Rautahat", "province": "2", "province_name": "Madhesh"}, {"id": "53", "name": "Bara - 1", "district": "Bara", "province": "2", "province_name": "Madhesh"}, {"id": "54", "name": "Bara - 2", "district": "Bara", "province": "2", "province_name": "Madhesh"}, {"id": "55", "name": "Bara - 3", "district": "Bara", "province": "2", "province_name": "Madhesh"}, {"id": "56", "name": "Bara - 4", "district": "Bara", "province": "2", "province_name": "Madhesh"}, {"id": "57", "name": "Parsa - 1", "district": "Parsa", "province": "2", "province_name": "Madhesh"}, {"id": "58", "name": "Parsa - 2", "district": "Parsa", "province": "2", "province_name": "Madhesh"}, {"id": "59", "name": "Parsa - 3", "district": "Parsa", "province": "2", "province_name": "Madhesh"}, {"id": "60", "name": "Parsa - 4", "district": "Parsa", "province": "2", "province_name": "Madhesh"}, {"id": "61", "name": "Kathmandu - 1", "district": "Kathmandu", "province": "3", "province_name": "Bagmati"}, {"id": "62", "name": "Kathmandu - 2", "district": "Kathmandu", "province": "3", "province_name": "Bagmati"}, {"id": "63", "name": "Kathmandu - 3", "district": "Kathmandu", "province": "3", "province_name": "Bagmati"}, {"id": "64", "name": "Kathmandu - 4", "district": "Kathmandu", "province": "3", "province_name": "Bagmati"}, {"id": "65", "name": "Kathmandu - 5", "district": "Kathmandu", "province": "3", "province_name": "Bagmati"}, {"id": "66", "name": "Kathmandu - 6", "district": "Kathmandu", "province": "3", "province_name": "Bagmati"}, {"id": "67", "name": "Kathmandu - 7", "district": "Kathmandu", "province": "3", "province_name": "Bagmati"}, {"id": "68", "name": "Kathmandu - 8", "district": "Kathmandu", "province": "3", "province_name": "Bagmati"}, {"id": "69", "name": "Kathmandu - 9", "district": "Kathmandu", "province": "3", "province_name": "Bagmati"}, {"id": "70", "name": "Kathmandu - 10", "district": "Kathmandu", "province": "3", "province_name": "Bagmati"}, {"id": "71", "name": "Chitwan - 1", "district": "Chitwan", "province": "3", "province_name": "Bagmati"}, {"id": "72", "name": "Chitwan - 2", "district": "Chitwan", "province": "3", "province_name": "Bagmati"}, {"id": "73", "name": "Chitwan - 3", "district": "Chitwan", "province": "3", "province_name": "Bagmati"}, {"id": "74", "name": "Lalitpur - 1", "district": "Lalitpur", "province": "3", "province_name": "Bagmati"}, {"id": "75", "name": "Lalitpur - 2", "district": "Lalitpur", "province": "3", "province_name": "Bagmati"}, {"id": "76", "name": "Lalitpur - 3", "district": "Lalitpur", "province": "3", "province_name": "Bagmati"}, {"id": "77", "name": "Kavrepalanchok - 1", "district": "Kavrepalanchok", "province": "3", "province_name": "Bagmati"}, {"id": "78", "name": "Kavrepalanchok - 2", "district": "Kavrepalanchok", "province": "3", "province_name": "Bagmati"}, {"id": "79", "name": "Sindhupalchok - 1", "district": "Sindhupalchok", "province": "3", "province_name": "Bagmati"}, {"id": "80", "name": "Sindhupalchok - 2", "district": "Sindhupalchok", "province": "3", "province_name": "Bagmati"}, {"id": "81", "name": "Makwanpur - 1", "district": "Makwanpur", "province": "3", "province_name": "Bagmati"}, {"id": "82", "name": "Makwanpur - 2", "district": "Makwanpur", "province": "3", "province_name": "Bagmati"}, {"id": "83", "name": "Nuwakot - 1", "district": "Nuwakot", "province": "3", "province_name": "Bagmati"}, {"id": "84", "name": "Nuwakot - 2", "district": "Nuwakot", "province": "3", "province_name": "Bagmati"}, {"id": "85", "name": "Dhading - 1", "district": "Dhading", "province": "3", "province_name": "Bagmati"}, {"id": "86", "name": "Dhading - 2", "district": "Dhading", "province": "3", "province_name": "Bagmati"}, {"id": "87", "name": "Bhaktapur - 1", "district": "Bhaktapur", "province": "3", "province_name": "Bagmati"}, {"id": "88", "name": "Bhaktapur - 2", "district": "Bhaktapur", "province": "3", "province_name": "Bagmati"}, {"id": "89", "name": "Dolakha", "district": "Dolakha", "province": "3", "province_name": "Bagmati"}, {"id": "90", "name": "Ramechhap", "district": "Ramechhap", "province": "3", "province_name": "Bagmati"}, {"id": "91", "name": "Sindhuli - 1", "district": "Sindhuli", "province": "3", "province_name": "Bagmati"}, {"id": "92", "name": "Sindhuli - 2", "district": "Sindhuli", "province": "3", "province_name": "Bagmati"}, {"id": "93", "name": "Rasuwa", "district": "Rasuwa", "province": "3", "province_name": "Bagmati"}, {"id": "94", "name": "Kaski - 1", "district": "Kaski", "province": "4", "province_name": "Gandaki"}, {"id": "95", "name": "Kaski - 2", "district": "Kaski", "province": "4", "province_name": "Gandaki"}, {"id": "96", "name": "Kaski - 3", "district": "Kaski", "province": "4", "province_name": "Gandaki"}, {"id": "97", "name": "Tanahun - 1", "district": "Tanahun", "province": "4", "province_name": "Gandaki"}, {"id": "98", "name": "Tanahun - 2", "district": "Tanahun", "province": "4", "province_name": "Gandaki"}, {"id": "99", "name": "Syangja - 1", "district": "Syangja", "province": "4", "province_name": "Gandaki"}, {"id": "100", "name": "Syangja - 2", "district": "Syangja", "province": "4", "province_name": "Gandaki"}, {"id": "101", "name": "Baglung - 1", "district": "Baglung", "province": "4", "province_name": "Gandaki"}, {"id": "102", "name": "Baglung - 2", "district": "Baglung", "province": "4", "province_name": "Gandaki"}, {"id": "103", "name": "Nawalpur - 1", "district": "Nawalpur", "province": "4", "province_name": "Gandaki"}, {"id": "104", "name": "Nawalpur - 2", "district": "Nawalpur", "province": "4", "province_name": "Gandaki"}, {"id": "105", "name": "Gorkha - 1", "district": "Gorkha", "province": "4", "province_name": "Gandaki"}, {"id": "106", "name": "Gorkha - 2", "district": "Gorkha", "province": "4", "province_name": "Gandaki"}, {"id": "107", "name": "Lamjung", "district": "Lamjung", "province": "4", "province_name": "Gandaki"}, {"id": "108", "name": "Manang", "district": "Manang", "province": "4", "province_name": "Gandaki"}, {"id": "109", "name": "Mustang", "district": "Mustang", "province": "4", "province_name": "Gandaki"}, {"id": "110", "name": "Myagdi", "district": "Myagdi", "province": "4", "province_name": "Gandaki"}, {"id": "111", "name": "Parbat", "district": "Parbat", "province": "4", "province_name": "Gandaki"}, {"id": "112", "name": "Rupandehi - 1", "district": "Rupandehi", "province": "5", "province_name": "Lumbini"}, {"id": "113", "name": "Rupandehi - 2", "district": "Rupandehi", "province": "5", "province_name": "Lumbini"}, {"id": "114", "name": "Rupandehi - 3", "district": "Rupandehi", "province": "5", "province_name": "Lumbini"}, {"id": "115", "name": "Rupandehi - 4", "district": "Rupandehi", "province": "5", "province_name": "Lumbini"}, {"id": "116", "name": "Rupandehi - 5", "district": "Rupandehi", "province": "5", "province_name": "Lumbini"}, {"id": "117", "name": "Dang - 1", "district": "Dang", "province": "5", "province_name": "Lumbini"}, {"id": "118", "name": "Dang - 2", "district": "Dang", "province": "5", "province_name": "Lumbini"}, {"id": "119", "name": "Dang - 3", "district": "Dang", "province": "5", "province_name": "Lumbini"}, {"id": "120", "name": "Kapilvastu - 1", "district": "Kapilvastu", "province": "5", "province_name": "Lumbini"}, {"id": "121", "name": "Kapilvastu - 2", "district": "Kapilvastu", "province": "5", "province_name": "Lumbini"}, {"id": "122", "name": "Kapilvastu - 3", "district": "Kapilvastu", "province": "5", "province_name": "Lumbini"}, {"id": "123", "name": "Banke - 1", "district": "Banke", "province": "5", "province_name": "Lumbini"}, {"id": "124", "name": "Banke - 2", "district": "Banke", "province": "5", "province_name": "Lumbini"}, {"id": "125", "name": "Banke - 3", "district": "Banke", "province": "5", "province_name": "Lumbini"}, {"id": "126", "name": "Gulmi - 1", "district": "Gulmi", "province": "5", "province_name": "Lumbini"}, {"id": "127", "name": "Gulmi - 2", "district": "Gulmi", "province": "5", "province_name": "Lumbini"}, {"id": "128", "name": "Palpa - 1", "district": "Palpa", "province": "5", "province_name": "Lumbini"}, {"id": "129", "name": "Palpa - 2", "district": "Palpa", "province": "5", "province_name": "Lumbini"}, {"id": "130", "name": "Bardiya - 1", "district": "Bardiya", "province": "5", "province_name": "Lumbini"}, {"id": "131", "name": "Bardiya - 2", "district": "Bardiya", "province": "5", "province_name": "Lumbini"}, {"id": "132", "name": "Nawalparasi West - 1", "district": "Nawalparasi West", "province": "5", "province_name": "Lumbini"}, {"id": "133", "name": "Nawalparasi West - 2", "district": "Nawalparasi West", "province": "5", "province_name": "Lumbini"}, {"id": "134", "name": "Arghakhanchi", "district": "Arghakhanchi", "province": "5", "province_name": "Lumbini"}, {"id": "135", "name": "Pyuthan", "district": "Pyuthan", "province": "5", "province_name": "Lumbini"}, {"id": "136", "name": "Rolpa", "district": "Rolpa", "province": "5", "province_name": "Lumbini"}, {"id": "137", "name": "Rukum East", "district": "Rukum East", "province": "5", "province_name": "Lumbini"}, {"id": "138", "name": "Surkhet - 1", "district": "Surkhet", "province": "6", "province_name": "Karnali"}, {"id": "139", "name": "Surkhet - 2", "district": "Surkhet", "province": "6", "province_name": "Karnali"}, {"id": "140", "name": "Dailekh - 1", "district": "Dailekh", "province": "6", "province_name": "Karnali"}, {"id": "141", "name": "Dailekh - 2", "district": "Dailekh", "province": "6", "province_name": "Karnali"}, {"id": "142", "name": "Rukum West", "district": "Rukum West", "province": "6", "province_name": "Karnali"}, {"id": "143", "name": "Salyan", "district": "Salyan", "province": "6", "province_name": "Karnali"}, {"id": "144", "name": "Jajarkot", "district": "Jajarkot", "province": "6", "province_name": "Karnali"}, {"id": "145", "name": "Dolpa", "district": "Dolpa", "province": "6", "province_name": "Karnali"}, {"id": "146", "name": "Jumla", "district": "Jumla", "province": "6", "province_name": "Karnali"}, {"id": "147", "name": "Kalikot", "district": "Kalikot", "province": "6", "province_name": "Karnali"}, {"id": "148", "name": "Mugu", "district": "Mugu", "province": "6", "province_name": "Karnali"}, {"id": "149", "name": "Humla", "district": "Humla", "province": "6", "province_name": "Karnali"}, {"id": "150", "name": "Kailali - 1", "district": "Kailali", "province": "7", "province_name": "Sudurpashchim"}, {"id": "151", "name": "Kailali - 2", "district": "Kailali", "province": "7", "province_name": "Sudurpashchim"}, {"id": "152", "name": "Kailali - 3", "district": "Kailali", "province": "7", "province_name": "Sudurpashchim"}, {"id": "153", "name": "Kailali - 4", "district": "Kailali", "province": "7", "province_name": "Sudurpashchim"}, {"id": "154", "name": "Kailali - 5", "district": "Kailali", "province": "7", "province_name": "Sudurpashchim"}, {"id": "155", "name": "Kanchanpur - 1", "district": "Kanchanpur", "province": "7", "province_name": "Sudurpashchim"}, {"id": "156", "name": "Kanchanpur - 2", "district": "Kanchanpur", "province": "7", "province_name": "Sudurpashchim"}, {"id": "157", "name": "Kanchanpur - 3", "district": "Kanchanpur", "province": "7", "province_name": "Sudurpashchim"}, {"id": "158", "name": "Achham - 1", "district": "Achham", "province": "7", "province_name": "Sudurpashchim"}, {"id": "159", "name": "Achham - 2", "district": "Achham", "province": "7", "province_name": "Sudurpashchim"}, {"id": "160", "name": "Bajura", "district": "Bajura", "province": "7", "province_name": "Sudurpashchim"}, {"id": "161", "name": "Bajhang", "district": "Bajhang", "province": "7", "province_name": "Sudurpashchim"}, {"id": "162", "name": "Doti", "district": "Doti", "province": "7", "province_name": "Sudurpashchim"}, {"id": "163", "name": "Darchula", "district": "Darchula", "province": "7", "province_name": "Sudurpashchim"}, {"id": "164", "name": "Baitadi", "district": "Baitadi", "province": "7", "province_name": "Sudurpashchim"}, {"id": "165", "name": "Dadeldhura", "district": "Dadeldhura", "province": "7", "province_name": "Sudurpashchim"}];
+const MASTER = [{"id": "1", "name": "Morang - 1", "district": "Morang", "province": "1", "province_name": "Koshi"}, {"id": "2", "name": "Morang - 2", "district": "Morang", "province": "1", "province_name": "Koshi"}, {"id": "3", "name": "Morang - 3", "district": "Morang", "province": "1", "province_name": "Koshi"}, {"id": "4", "name": "Morang - 4", "district": "Morang", "province": "1", "province_name": "Koshi"}, {"id": "5", "name": "Morang - 5", "district": "Morang", "province": "1", "province_name": "Koshi"}, {"id": "6", "name": "Morang - 6", "district": "Morang", "province": "1", "province_name": "Koshi"}, {"id": "7", "name": "Jhapa - 1", "district": "Jhapa", "province": "1", "province_name": "Koshi"}, {"id": "8", "name": "Jhapa - 2", "district": "Jhapa", "province": "1", "province_name": "Koshi"}, {"id": "9", "name": "Jhapa - 3", "district": "Jhapa", "province": "1", "province_name": "Koshi"}, {"id": "10", "name": "Jhapa - 4", "district": "Jhapa", "province": "1", "province_name": "Koshi"}, {"id": "11", "name": "Jhapa - 5", "district": "Jhapa", "province": "1", "province_name": "Koshi"}, {"id": "12", "name": "Sunsari - 1", "district": "Sunsari", "province": "1", "province_name": "Koshi"}, {"id": "13", "name": "Sunsari - 2", "district": "Sunsari", "province": "1", "province_name": "Koshi"}, {"id": "14", "name": "Sunsari - 3", "district": "Sunsari", "province": "1", "province_name": "Koshi"}, {"id": "15", "name": "Sunsari - 4", "district": "Sunsari", "province": "1", "province_name": "Koshi"}, {"id": "16", "name": "Ilam - 1", "district": "Ilam", "province": "1", "province_name": "Koshi"}, {"id": "17", "name": "Ilam - 2", "district": "Ilam", "province": "1", "province_name": "Koshi"}, {"id": "18", "name": "Udayapur - 1", "district": "Udayapur", "province": "1", "province_name": "Koshi"}, {"id": "19", "name": "Udayapur - 2", "district": "Udayapur", "province": "1", "province_name": "Koshi"}, {"id": "20", "name": "Taplejung", "district": "Taplejung", "province": "1", "province_name": "Koshi"}, {"id": "21", "name": "Panchthar", "district": "Panchthar", "province": "1", "province_name": "Koshi"}, {"id": "22", "name": "Sankhuwasabha", "district": "Sankhuwasabha", "province": "1", "province_name": "Koshi"}, {"id": "23", "name": "Tehrathum", "district": "Tehrathum", "province": "1", "province_name": "Koshi"}, {"id": "24", "name": "Bhojpur", "district": "Bhojpur", "province": "1", "province_name": "Koshi"}, {"id": "25", "name": "Dhankuta", "district": "Dhankuta", "province": "1", "province_name": "Koshi"}, {"id": "26", "name": "Solukhumbu", "district": "Solukhumbu", "province": "1", "province_name": "Koshi"}, {"id": "27", "name": "Khotang", "district": "Khotang", "province": "1", "province_name": "Koshi"}, {"id": "28", "name": "Okhaldhunga", "district": "Okhaldhunga", "province": "1", "province_name": "Koshi"}, {"id": "29", "name": "Saptari - 1", "district": "Saptari", "province": "2", "province_name": "Madhesh"}, {"id": "30", "name": "Saptari - 2", "district": "Saptari", "province": "2", "province_name": "Madhesh"}, {"id": "31", "name": "Saptari - 3", "district": "Saptari", "province": "2", "province_name": "Madhesh"}, {"id": "32", "name": "Saptari - 4", "district": "Saptari", "province": "2", "province_name": "Madhesh"}, {"id": "33", "name": "Siraha - 1", "district": "Siraha", "province": "2", "province_name": "Madhesh"}, {"id": "34", "name": "Siraha - 2", "district": "Siraha", "province": "2", "province_name": "Madhesh"}, {"id": "35", "name": "Siraha - 3", "district": "Siraha", "province": "2", "province_name": "Madhesh"}, {"id": "36", "name": "Siraha - 4", "district": "Siraha", "province": "2", "province_name": "Madhesh"}, {"id": "37", "name": "Dhanusha - 1", "district": "Dhanusha", "province": "2", "province_name": "Madhesh"}, {"id": "38", "name": "Dhanusha - 2", "district": "Dhanusha", "province": "2", "province_name": "Madhesh"}, {"id": "39", "name": "Dhanusha - 3", "district": "Dhanusha", "province": "2", "province_name": "Madhesh"}, {"id": "40", "name": "Dhanusha - 4", "district": "Dhanusha", "province": "2", "province_name": "Madhesh"}, {"id": "41", "name": "Mahottari - 1", "district": "Mahottari", "province": "2", "province_name": "Madhesh"}, {"id": "42", "name": "Mahottari - 2", "district": "Mahottari", "province": "2", "province_name": "Madhesh"}, {"id": "43", "name": "Mahottari - 3", "district": "Mahottari", "province": "2", "province_name": "Madhesh"}, {"id": "44", "name": "Mahottari - 4", "district": "Mahottari", "province": "2", "province_name": "Madhesh"}, {"id": "45", "name": "Sarlahi - 1", "district": "Sarlahi", "province": "2", "province_name": "Madhesh"}, {"id": "46", "name": "Sarlahi - 2", "district": "Sarlahi", "province": "2", "province_name": "Madhesh"}, {"id": "47", "name": "Sarlahi - 3", "district": "Sarlahi", "province": "2", "province_name": "Madhesh"}, {"id": "48", "name": "Sarlahi - 4", "district": "Sarlahi", "province": "2", "province_name": "Madhesh"}, {"id": "49", "name": "Rautahat - 1", "district": "Rautahat", "province": "2", "province_name": "Madhesh"}, {"id": "50", "name": "Rautahat - 2", "district": "Rautahat", "province": "2", "province_name": "Madhesh"}, {"id": "51", "name": "Rautahat - 3", "district": "Rautahat", "province": "2", "province_name": "Madhesh"}, {"id": "52", "name": "Rautahat - 4", "district": "Rautahat", "province": "2", "province_name": "Madhesh"}, {"id": "53", "name": "Bara - 1", "district": "Bara", "province": "2", "province_name": "Madhesh"}, {"id": "54", "name": "Bara - 2", "district": "Bara", "province": "2", "province_name": "Madhesh"}, {"id": "55", "name": "Bara - 3", "district": "Bara", "province": "2", "province_name": "Madhesh"}, {"id": "56", "name": "Bara - 4", "district": "Bara", "province": "2", "province_name": "Madhesh"}, {"id": "57", "name": "Parsa - 1", "district": "Parsa", "province": "2", "province_name": "Madhesh"}, {"id": "58", "name": "Parsa - 2", "district": "Parsa", "province": "2", "province_name": "Madhesh"}, {"id": "59", "name": "Parsa - 3", "district": "Parsa", "province": "2", "province_name": "Madhesh"}, {"id": "60", "name": "Parsa - 4", "district": "Parsa", "province": "2", "province_name": "Madhesh"}, {"id": "61", "name": "Kathmandu - 1", "district": "Kathmandu", "province": "3", "province_name": "Bagmati"}, {"id": "62", "name": "Kathmandu - 2", "district": "Kathmandu", "province": "3", "province_name": "Bagmati"}, {"id": "63", "name": "Kathmandu - 3", "district": "Kathmandu", "province": "3", "province_name": "Bagmati"}, {"id": "64", "name": "Kathmandu - 4", "district": "Kathmandu", "province": "3", "province_name": "Bagmati"}, {"id": "65", "name": "Kathmandu - 5", "district": "Kathmandu", "province": "3", "province_name": "Bagmati"}, {"id": "66", "name": "Kathmandu - 6", "district": "Kathmandu", "province": "3", "province_name": "Bagmati"}, {"id": "67", "name": "Kathmandu - 7", "district": "Kathmandu", "province": "3", "province_name": "Bagmati"}, {"id": "68", "name": "Kathmandu - 8", "district": "Kathmandu", "province": "3", "province_name": "Bagmati"}, {"id": "69", "name": "Kathmandu - 9", "district": "Kathmandu", "province": "3", "province_name": "Bagmati"}, {"id": "70", "name": "Kathmandu - 10", "district": "Kathmandu", "province": "3", "province_name": "Bagmati"}, {"id": "71", "name": "Chitwan - 1", "district": "Chitwan", "province": "3", "province_name": "Bagmati"}, {"id": "72", "name": "Chitwan - 2", "district": "Chitwan", "province": "3", "province_name": "Bagmati"}, {"id": "73", "name": "Chitwan - 3", "district": "Chitwan", "province": "3", "province_name": "Bagmati"}, {"id": "74", "name": "Lalitpur - 1", "district": "Lalitpur", "province": "3", "province_name": "Bagmati"}, {"id": "75", "name": "Lalitpur - 2", "district": "Lalitpur", "province": "3", "province_name": "Bagmati"}, {"id": "76", "name": "Lalitpur - 3", "district": "Lalitpur", "province": "3", "province_name": "Bagmati"}, {"id": "77", "name": "Kavrepalanchok - 1", "district": "Kavrepalanchok", "province": "3", "province_name": "Bagmati"}, {"id": "78", "name": "Kavrepalanchok - 2", "district": "Kavrepalanchok", "province": "3", "province_name": "Bagmati"}, {"id": "79", "name": "Sindhupalchok - 1", "district": "Sindhupalchok", "province": "3", "province_name": "Bagmati"}, {"id": "80", "name": "Sindhupalchok - 2", "district": "Sindhupalchok", "province": "3", "province_name": "Bagmati"}, {"id": "81", "name": "Makwanpur - 1", "district": "Makwanpur", "province": "3", "province_name": "Bagmati"}, {"id": "82", "name": "Makwanpur - 2", "district": "Makwanpur", "province": "3", "province_name": "Bagmati"}, {"id": "83", "name": "Nuwakot - 1", "district": "Nuwakot", "province": "3", "province_name": "Bagmati"}, {"id": "84", "name": "Nuwakot - 2", "district": "Nuwakot", "province": "3", "province_name": "Bagmati"}, {"id": "85", "name": "Dhading - 1", "district": "Dhading", "province": "3", "province_name": "Bagmati"}, {"id": "86", "name": "Dhading - 2", "district": "Dhading", "province": "3", "province_name": "Bagmati"}, {"id": "87", "name": "Bhaktapur - 1", "district": "Bhaktapur", "province": "3", "province_name": "Bagmati"}, {"id": "88", "name": "Bhaktapur - 2", "district": "Bhaktapur", "province": "3", "province_name": "Bagmati"}, {"id": "89", "name": "Dolakha", "district": "Dolakha", "province": "3", "province_name": "Bagmati"}, {"id": "90", "name": "Ramechhap", "district": "Ramechhap", "province": "3", "province_name": "Bagmati"}, {"id": "91", "name": "Sindhuli - 1", "district": "Sindhuli", "province": "3", "province_name": "Bagmati"}, {"id": "92", "name": "Sindhuli - 2", "district": "Sindhuli", "province": "3", "province_name": "Bagmati"}, {"id": "93", "name": "Rasuwa", "district": "Rasuwa", "province": "3", "province_name": "Bagmati"}, {"id": "94", "name": "Kaski - 1", "district": "Kaski", "province": "4", "province_name": "Gandaki"}, {"id": "95", "name": "Kaski - 2", "district": "Kaski", "province": "4", "province_name": "Gandaki"}, {"id": "96", "name": "Kaski - 3", "district": "Kaski", "province": "4", "province_name": "Gandaki"}, {"id": "97", "name": "Tanahun - 1", "district": "Tanahun", "province": "4", "province_name": "Gandaki"}, {"id": "98", "name": "Tanahun - 2", "district": "Tanahun", "province": "4", "province_name": "Gandaki"}, {"id": "99", "name": "Syangja - 1", "district": "Syangja", "province": "4", "province_name": "Gandaki"}, {"id": "100", "name": "Syangja - 2", "district": "Syangja", "province": "4", "province_name": "Gandaki"}, {"id": "101", "name": "Baglung - 1", "district": "Baglung", "province": "4", "province_name": "Gandaki"}, {"id": "102", "name": "Baglung - 2", "district": "Baglung", "province": "4", "province_name": "Gandaki"}, {"id": "103", "name": "Nawalpur - 1", "district": "Nawalpur", "province": "4", "province_name": "Gandaki"}, {"id": "104", "name": "Nawalpur - 2", "district": "Nawalpur", "province": "4", "province_name": "Gandaki"}, {"id": "105", "name": "Gorkha", "district": "Gorkha", "province": "4", "province_name": "Gandaki"}, {"id": "106", "name": "Lamjung", "district": "Lamjung", "province": "4", "province_name": "Gandaki"}, {"id": "107", "name": "Manang", "district": "Manang", "province": "4", "province_name": "Gandaki"}, {"id": "108", "name": "Mustang", "district": "Mustang", "province": "4", "province_name": "Gandaki"}, {"id": "109", "name": "Myagdi", "district": "Myagdi", "province": "4", "province_name": "Gandaki"}, {"id": "110", "name": "Parbat", "district": "Parbat", "province": "4", "province_name": "Gandaki"}, {"id": "111", "name": "Chitwan", "district": "Chitwan", "province": "4", "province_name": "Gandaki"}, {"id": "112", "name": "Rupandehi - 1", "district": "Rupandehi", "province": "5", "province_name": "Lumbini"}, {"id": "113", "name": "Rupandehi - 2", "district": "Rupandehi", "province": "5", "province_name": "Lumbini"}, {"id": "114", "name": "Rupandehi - 3", "district": "Rupandehi", "province": "5", "province_name": "Lumbini"}, {"id": "115", "name": "Rupandehi - 4", "district": "Rupandehi", "province": "5", "province_name": "Lumbini"}, {"id": "116", "name": "Rupandehi - 5", "district": "Rupandehi", "province": "5", "province_name": "Lumbini"}, {"id": "117", "name": "Dang - 1", "district": "Dang", "province": "5", "province_name": "Lumbini"}, {"id": "118", "name": "Dang - 2", "district": "Dang", "province": "5", "province_name": "Lumbini"}, {"id": "119", "name": "Dang - 3", "district": "Dang", "province": "5", "province_name": "Lumbini"}, {"id": "120", "name": "Kapilvastu - 1", "district": "Kapilvastu", "province": "5", "province_name": "Lumbini"}, {"id": "121", "name": "Kapilvastu - 2", "district": "Kapilvastu", "province": "5", "province_name": "Lumbini"}, {"id": "122", "name": "Kapilvastu - 3", "district": "Kapilvastu", "province": "5", "province_name": "Lumbini"}, {"id": "123", "name": "Banke - 1", "district": "Banke", "province": "5", "province_name": "Lumbini"}, {"id": "124", "name": "Banke - 2", "district": "Banke", "province": "5", "province_name": "Lumbini"}, {"id": "125", "name": "Banke - 3", "district": "Banke", "province": "5", "province_name": "Lumbini"}, {"id": "126", "name": "Gulmi - 1", "district": "Gulmi", "province": "5", "province_name": "Lumbini"}, {"id": "127", "name": "Gulmi - 2", "district": "Gulmi", "province": "5", "province_name": "Lumbini"}, {"id": "128", "name": "Palpa - 1", "district": "Palpa", "province": "5", "province_name": "Lumbini"}, {"id": "129", "name": "Palpa - 2", "district": "Palpa", "province": "5", "province_name": "Lumbini"}, {"id": "130", "name": "Bardiya - 1", "district": "Bardiya", "province": "5", "province_name": "Lumbini"}, {"id": "131", "name": "Bardiya - 2", "district": "Bardiya", "province": "5", "province_name": "Lumbini"}, {"id": "132", "name": "Nawalparasi West - 1", "district": "Nawalparasi West", "province": "5", "province_name": "Lumbini"}, {"id": "133", "name": "Nawalparasi West - 2", "district": "Nawalparasi West", "province": "5", "province_name": "Lumbini"}, {"id": "134", "name": "Arghakhanchi", "district": "Arghakhanchi", "province": "5", "province_name": "Lumbini"}, {"id": "135", "name": "Pyuthan", "district": "Pyuthan", "province": "5", "province_name": "Lumbini"}, {"id": "136", "name": "Rolpa", "district": "Rolpa", "province": "5", "province_name": "Lumbini"}, {"id": "137", "name": "Rukum East", "district": "Rukum East", "province": "5", "province_name": "Lumbini"}, {"id": "138", "name": "Surkhet - 1", "district": "Surkhet", "province": "6", "province_name": "Karnali"}, {"id": "139", "name": "Surkhet - 2", "district": "Surkhet", "province": "6", "province_name": "Karnali"}, {"id": "140", "name": "Dailekh - 1", "district": "Dailekh", "province": "6", "province_name": "Karnali"}, {"id": "141", "name": "Dailekh - 2", "district": "Dailekh", "province": "6", "province_name": "Karnali"}, {"id": "142", "name": "Rukum West", "district": "Rukum West", "province": "6", "province_name": "Karnali"}, {"id": "143", "name": "Salyan", "district": "Salyan", "province": "6", "province_name": "Karnali"}, {"id": "144", "name": "Jajarkot", "district": "Jajarkot", "province": "6", "province_name": "Karnali"}, {"id": "145", "name": "Dolpa", "district": "Dolpa", "province": "6", "province_name": "Karnali"}, {"id": "146", "name": "Jumla", "district": "Jumla", "province": "6", "province_name": "Karnali"}, {"id": "147", "name": "Kalikot", "district": "Kalikot", "province": "6", "province_name": "Karnali"}, {"id": "148", "name": "Mugu", "district": "Mugu", "province": "6", "province_name": "Karnali"}, {"id": "149", "name": "Humla", "district": "Humla", "province": "6", "province_name": "Karnali"}, {"id": "150", "name": "Kailali - 1", "district": "Kailali", "province": "7", "province_name": "Sudurpashchim"}, {"id": "151", "name": "Kailali - 2", "district": "Kailali", "province": "7", "province_name": "Sudurpashchim"}, {"id": "152", "name": "Kailali - 3", "district": "Kailali", "province": "7", "province_name": "Sudurpashchim"}, {"id": "153", "name": "Kailali - 4", "district": "Kailali", "province": "7", "province_name": "Sudurpashchim"}, {"id": "154", "name": "Kailali - 5", "district": "Kailali", "province": "7", "province_name": "Sudurpashchim"}, {"id": "155", "name": "Kanchanpur - 1", "district": "Kanchanpur", "province": "7", "province_name": "Sudurpashchim"}, {"id": "156", "name": "Kanchanpur - 2", "district": "Kanchanpur", "province": "7", "province_name": "Sudurpashchim"}, {"id": "157", "name": "Kanchanpur - 3", "district": "Kanchanpur", "province": "7", "province_name": "Sudurpashchim"}, {"id": "158", "name": "Achham - 1", "district": "Achham", "province": "7", "province_name": "Sudurpashchim"}, {"id": "159", "name": "Achham - 2", "district": "Achham", "province": "7", "province_name": "Sudurpashchim"}, {"id": "160", "name": "Bajura", "district": "Bajura", "province": "7", "province_name": "Sudurpashchim"}, {"id": "161", "name": "Bajhang", "district": "Bajhang", "province": "7", "province_name": "Sudurpashchim"}, {"id": "162", "name": "Doti", "district": "Doti", "province": "7", "province_name": "Sudurpashchim"}, {"id": "163", "name": "Darchula", "district": "Darchula", "province": "7", "province_name": "Sudurpashchim"}, {"id": "164", "name": "Baitadi", "district": "Baitadi", "province": "7", "province_name": "Sudurpashchim"}, {"id": "165", "name": "Dadeldhura", "district": "Dadeldhura", "province": "7", "province_name": "Sudurpashchim"}];
 
 const PARTY_DB = {
   'CPN-UML':                   {color:'#e03030',short:'UML',    logo:'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDACAWGBwYFCAcGhwkIiAmMFA0MCwsMGJGSjpQdGZ6eHJmcG6AkLicgIiuim5woNqirr7EztDOfJri8uDI8LjKzsb/2wBDASIkJDAqMF40NF7GhHCExsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsb/wAARCAAoACgDASIAAhEBAxEB/8QAGgAAAwADAQAAAAAAAAAAAAAAAAIFAQMEBv/EACQQAAICAQMFAAMBAAAAAAAAAAECAAMRBBMhEjEyQVEUQmGB/8QAGAEAAwEBAAAAAAAAAAAAAAAAAQIDBAX/xAAbEQADAQEBAQEAAAAAAAAAAAAAAQIRAwQhEv/aAAwDAQACEQMRAD8AvkgDJ7RLbRUFY+JOCZi63aGWQlfZHOJL1GoWpWVWLVt4r8it4V583bKe8PydvPHTmNXaLC/T4qcZ+yANdYGzgePT/k7NNqeusIj7afufcVXpa/O5WleE1U2VsOmrJUe8cQlDK1gmoFwUlbEVf6JC1uTd3B49T0F1dbAtbkgesyZqtN11l3XbGcIPcna01+e1L+kqdGizunAB499ox0Nitgkdszr0+nWtVLKWrbu3yTSemvp0n8/CjQbgoD1oo/hhHqq2hhXJX0DziEujlU9ZsmuyoWOhblVOcfTCEIE8F2R+SbMcdOI1VQqVlHiTkCEIMC6Y4AAwO0IQhFP/2Q==_PLACEHOLDER'},
   'Nepal Communist Party (UML)':{color:'#e03030',short:'UML',   logo:'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDACAWGBwYFCAcGhwkIiAmMFA0MCwsMGJGSjpQdGZ6eHJmcG6AkLicgIiuim5woNqirr7EztDOfJri8uDI8LjKzsb/2wBDASIkJDAqMF40NF7GhHCExsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsb/wAARCAAoACgDASIAAhEBAxEB/8QAGgAAAwADAQAAAAAAAAAAAAAAAAIFAQMEBv/EACQQAAICAQMFAAMBAAAAAAAAAAECAAMRBBMhEjEyQVEUQmGB/8QAGAEAAwEBAAAAAAAAAAAAAAAAAQIDBAX/xAAbEQADAQEBAQEAAAAAAAAAAAAAAQIRAwQhEv/aAAwDAQACEQMRAD8AvkgDJ7RLbRUFY+JOCZi63aGWQlfZHOJL1GoWpWVWLVt4r8it4V583bKe8PydvPHTmNXaLC/T4qcZ+yANdYGzgePT/k7NNqeusIj7afufcVXpa/O5WleE1U2VsOmrJUe8cQlDK1gmoFwUlbEVf6JC1uTd3B49T0F1dbAtbkgesyZqtN11l3XbGcIPcna01+e1L+kqdGizunAB499ox0Nitgkdszr0+nWtVLKWrbu3yTSemvp0n8/CjQbgoD1oo/hhHqq2hhXJX0DziEujlU9ZsmuyoWOhblVOcfTCEIE8F2R+SbMcdOI1VQqVlHiTkCEIMC6Y4AAwO0IQhFP/2Q==_PLACEHOLDER'},
   'Nepali Congress':            {color:'#1a8c3a',short:'NC',     logo:null},
-  'CPN (Maoist Centre)':        {color:'#cc0000',short:'Maoist', logo:null},
+  'CPN (Maoist Centre)':        {color:'#b00000',short:'Maoist', logo:null},
   'Nepal Communist Party (Maoist Centre)':{color:'#b00000',short:'Maoist',logo:null},
-  'Rastriya Swatantra Party':   {color:'#1e90ff',short:'RSP',    logo:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoAgMAAADxkFD+AAAACVBMVEVMaXEAru8Dru2TDLi+AAAAA3RSTlMA/n1e/QVsAAAAV0lEQVR42mNgGCSAkZACthkMDAwMzAwMDAz/vjxgYGBgYmBgYBARwaZWNIQBpgACMJiMcKYDNgWMEHEmBgaG/wwMB2CizBfgon8NHLBYzOQAN+wfTYMLAK/dCx0s2uRmAAAAAElFTkSuQmCC'},
-  'RSP':                        {color:'#1e90ff',short:'RSP',    logo:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoAgMAAADxkFD+AAAACVBMVEVMaXEAru8Dru2TDLi+AAAAA3RSTlMA/n1e/QVsAAAAV0lEQVR42mNgGCSAkZACthkMDAwMzAwMDAz/vjxgYGBgYmBgYBARwaZWNIQBpgACMJiMcKYDNgWMEHEmBgaG/wwMB2CizBfgon8NHLBYzOQAN+wfTYMLAK/dCx0s2uRmAAAAAElFTkSuQmCC'},
-  'Rastriya Prajatantra Party': {color:'#9b59b6',short:'RPP',   logo:null},
-  'Janamat Party':              {color:'#f39c12',short:'JP',     logo:null},
-  'Nagarik Unmukti Party':      {color:'#e74c3c',short:'NUP',   logo:null},
-  'Independent':                {color:'#e8e8e8',short:'IND',   logo:'data:image/png;base64,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'},
+  'Rastriya Swatantra Party':   {color:'#f5a623',short:'RSP',    logo:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoAgMAAADxkFD+AAAACVBMVEVMaXEAru8Dru2TDLi+AAAAA3RSTlMA/n1e/QVsAAAAV0lEQVR42mNgGCSAkZACthkMDAwMzAwMDAz/vjxgYGBgYmBgYBARwaZWNIQBpgACMJiMcKYDNgWMEHEmBgaG/wwMB2CizBfgon8NHLBYzOQAN+wfTYMLAK/dCx0s2uRmAAAAAElFTkSuQmCC'},
+  'RSP':                        {color:'#f5a623',short:'RSP',    logo:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoAgMAAADxkFD+AAAACVBMVEVMaXEAru8Dru2TDLi+AAAAA3RSTlMA/n1e/QVsAAAAV0lEQVR42mNgGCSAkZACthkMDAwMzAwMDAz/vjxgYGBgYmBgYBARwaZWNIQBpgACMJiMcKYDNgWMEHEmBgaG/wwMB2CizBfgon8NHLBYzOQAN+wfTYMLAK/dCx0s2uRmAAAAAElFTkSuQmCC'},
+  'Rastriya Prajatantra Party': {color:'#6a5acd',short:'RPP',   logo:null},
+  'Janamat Party':              {color:'#20b2aa',short:'JP',     logo:null},
+  'Nagarik Unmukti Party':      {color:'#ff6b6b',short:'NUP',   logo:null},
+  'Independent':                {color:'#555',   short:'IND',   logo:'data:image/png;base64,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'},
 };
 
 // ── NEPALI NAME LOOKUPS ──────────────────────────────────────
@@ -1162,57 +751,15 @@ function pMeta(name) {
   const abbr = name.split(' ').filter(w=>w.length>2).map(w=>w[0]).join('').substring(0,4).toUpperCase()||'—';
   return {color:'#4a4a6a',short:abbr,logo:null};
 }
-// ── NEPALI NUMERAL CONVERTER ─────────────────────────────────
-const NE_DIGITS = ['०','१','२','३','४','५','६','७','८','९'];
-function toNepaliNum(n) {
-  return String(n).replace(/[0-9]/g, d => NE_DIGITS[d]);
-}
-function fmt(n) {
-  if (n==null || n==='' || n==='—') return '—';
-  const num = Number(n);
-  if (isNaN(num)) return String(n);
-  const formatted = num.toLocaleString();
-  return lang === 'ne' ? toNepaliNum(formatted) : formatted;
-}
+function fmt(n) { if (n==null || n==='' || n==='—') return '—'; const num=Number(n); return isNaN(num)?String(n):num.toLocaleString(); }
 
 // ── STATE ────────────────────────────────────────────────────
 const API = '/api';
 let regions = [];
 let filter  = 'all';
 let expanded = null;
-// pinned: array of region objects or null; loaded from localStorage after regions are available
-let pinned = [];
-let _savedPinnedIds = []; // IDs from localStorage, hydrated once regions load
+let slots = [null,null,null];
 let autoTimer = null;
-
-// ── SETTINGS PERSISTENCE ─────────────────────────────────────
-// Single key stores all user preferences as one JSON object.
-// On every state change, saveSettings() is called. On init,
-// restoreSettings() re-applies everything before first render.
-const SETTINGS_KEY = 'chunab_settings';
-
-function saveSettings() {
-  try {
-    const s = {
-      theme:    document.body.classList.contains('light') ? 'light' : 'dark',
-      lang:     lang,
-      filter:   filter,
-      search:   document.getElementById('searchBox')?.value || '',
-      expanded: expanded,
-      pinned:   pinned.map(r => r ? r.id : null),
-    };
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
-  } catch(e) {}
-}
-
-function restoreSettings() {
-  try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
-    if (!raw) return {};
-    return JSON.parse(raw);
-  } catch(e) { return {}; }
-}
-
 
 // ── SERVER ───────────────────────────────────────────────────
 async function ping() {
@@ -1284,10 +831,8 @@ function renderPropBar() {
     const pm  = pMeta(party);
     const pct = (votes/grandTotal*100).toFixed(1);
     const w   = Math.max((votes/grandTotal*100),0.4).toFixed(2);
-    const pctDisplay = lang==='ne' ? toNepaliNum(pct) : pct;
-    const votesLbl = lang==='ne' ? 'मत' : 'votes';
-    return `<div class="prop-seg" style="width:${w}%;background:${pm.color}" title="${party}: ${pctDisplay}%">
-      <div class="prop-seg-tip" style="color:${pm.color}">${pm.short} ${pctDisplay}%<br><span style="color:var(--muted)">${fmt(votes)} ${votesLbl}</span></div>
+    return `<div class="prop-seg" style="width:${w}%;background:${pm.color}" title="${party}: ${pct}%">
+      <div class="prop-seg-tip" style="color:${pm.color}">${pm.short} ${pct}%<br><span style="color:var(--muted)">${fmt(votes)} votes</span></div>
     </div>`;
   }).join('');
 
@@ -1295,23 +840,19 @@ function renderPropBar() {
   legend.innerHTML = main.map(({party,votes})=>{
     const pm  = pMeta(party);
     const pct = (votes/grandTotal*100).toFixed(1);
-    const pctDisplay = lang==='ne' ? toNepaliNum(pct) : pct;
-    const votesLbl = lang==='ne' ? 'मत' : 'votes';
     return `<div class="pl-item">
       <div class="pl-dot" style="background:${pm.color}"></div>
       <div class="pl-info">
         <div class="pl-name">${pm.short}</div>
-        <div class="pl-votes">${fmt(votes)} ${votesLbl}</div>
+        <div class="pl-votes">${fmt(votes)} votes</div>
       </div>
-      <div class="pl-pct" style="color:${pm.color}">${pctDisplay}%</div>
+      <div class="pl-pct" style="color:${pm.color}">${pct}%</div>
     </div>`;
   }).join('');
 
   // Meta info
   const withVotes = regions.filter(r=>(r.votes_counted||0)>0).length;
-  const withVotesDisplay = lang==='ne' ? toNepaliNum(withVotes) : withVotes;
-  const regLenDisplay = lang==='ne' ? toNepaliNum(regions.length) : regions.length;
-  meta.textContent = `${withVotesDisplay} ${T('of')} ${regLenDisplay} ${T('reporting')}`;
+  meta.textContent = `${withVotes} ${T('of')} ${regions.length} ${T('reporting')}`;
   total.textContent = `${T('totalVotes')}: ${fmt(grandTotal)}`;
 }
 
@@ -1330,11 +871,10 @@ function renderGrid() {
   const dcl = regions.filter(r=>r.status==='declared').length;
   const pnd = regions.filter(r=>r.status==='pending').length;
   const vts = regions.reduce((a,r)=>a+(r.votes_counted||0),0);
-  const n = (v) => v ? (lang==='ne' ? toNepaliNum(v) : v) : '—';
-  document.getElementById('stTotal').textContent = lang==='ne' ? toNepaliNum(regions.length) : regions.length;
-  document.getElementById('stCount').textContent = n(cnt);
-  document.getElementById('stDecl').textContent  = n(dcl);
-  document.getElementById('stPend').textContent  = n(pnd);
+  document.getElementById('stTotal').textContent = regions.length;
+  document.getElementById('stCount').textContent = cnt||'—';
+  document.getElementById('stDecl').textContent  = dcl||'—';
+  document.getElementById('stPend').textContent  = pnd||'—';
   document.getElementById('stVotes').textContent = vts>0?fmt(vts):'—';
 
   // Update national proportional bar
@@ -1346,7 +886,7 @@ function renderGrid() {
 
   let html = '';
   for (const [pn,prs] of Object.entries(byP)) {
-    html += `<div class="prov-div"><span class="prov-lbl">${lang==='ne'?(PROVINCE_NE[prs[0].province]||pn):pn} ${T('province_lbl')}</span><div class="prov-line"></div><span class="prov-cnt">${lang==='ne'?toNepaliNum(prs.length):prs.length} ${T('seats')}</span></div>`;
+    html += `<div class="prov-div"><span class="prov-lbl">${lang==='ne'?(PROVINCE_NE[prs[0].province]||pn):pn} ${T('province_lbl')}</span><div class="prov-line"></div><span class="prov-cnt">${prs.length} ${T('seats')}</span></div>`;
     for (const r of prs) html += renderCard(r);
   }
   grid.innerHTML = html;
@@ -1355,14 +895,12 @@ function renderGrid() {
     if (el) el.classList.add('expanded');
   }
   setTimeout(observeLazy,60);
-  renderTally();
 }
 
 // ── RENDER CARD ──────────────────────────────────────────────
 function renderCard(r) {
   const isExp = expanded===r.id;
   const pct   = r.total_votes>0?Math.round((r.votes_counted/r.total_votes)*100):0;
-  const pctDisplay = lang==='ne' ? toNepaliNum(pct) : pct;
   const top3  = (r.parties||[]).slice(0,3);
   const maxV  = (top3[0]?.votes)||1;
   const bc    = r.status==='counting'?'b-cnt':r.status==='declared'?'b-dcl':'b-pnd';
@@ -1394,7 +932,7 @@ function renderCard(r) {
         </div>
         <div class="p-votes">
           <div class="p-vnum" style="color:${pm.color}">${fmt(p.votes)}</div>
-          <div class="p-vpct">${maxV>0&&p.votes>0?(lang==='ne'?toNepaliNum(Math.round(p.votes/maxV*100)):Math.round(p.votes/maxV*100))+'%':'—'}</div>
+          <div class="p-vpct">${maxV>0&&p.votes>0?Math.round(p.votes/maxV*100)+'%':'—'}</div>
         </div>
         <div class="vbar"><div class="vbar-fill" style="width:${bw}%;background:${pm.color}"></div></div>
       </div>`;
@@ -1413,7 +951,7 @@ function renderCard(r) {
         const won = c.status==='won';
         const leadingC = c.status==='leading';
         
-        const tag = won?`<span class="tag-won">${T('won')}</span>`:leadingC?`<span class="tag-lead">${T('leading')}</span>`:`<span class="tag-trail">${T('trailing')}</span>`;
+        const tag = won?`<span class="tag-won">${T('won')}</span>`:leading?`<span class="tag-lead">${T('leading')}</span>`:`<span class="tag-trail">${T('trailing')}</span>`;
         // Photo: lazy load from EC/NepseBajar URL, fallback to party logo or emoji
         const photoHtml = c.photo_url
           ? `<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
@@ -1445,102 +983,22 @@ function renderCard(r) {
   return `<div class="card${isExp?' expanded':''}" id="card-${r.id}" onclick="toggleCard('${r.id}')">
     <div class="card-hdr">
       <div><div class="c-name">${rName(r)}</div><div class="c-meta">${dName(r.district)} · ${T('province_lbl')} ${pName(r.province)}</div></div>
-      <div class="c-badges"><span class="badge ${bc}">${bt}</span>${pct>0?`<span class="b-pct">${pctDisplay}% ${lang==='ne'?'मतगणना':'counted'}</span>`:''}</div>
+      <div class="c-badges"><span class="badge ${bc}">${bt}</span>${pct>0?`<span class="b-pct">${pct}% counted</span>`:''}</div>
     </div>
     <div class="prog"><div class="prog-fill" style="width:${pct}%"></div></div>
     <div class="party-list">${pRows}</div>
-    <div class="card-ftr"><span class="exp-hint">${isExp ? (lang==="ne"?"बन्द गर्नुहोस्":"Close") : (lang==="ne"?"विस्तृत हेर्नुहोस्":"View Details")}</span><span class="exp-icon">⌄</span></div>
-    <div class="exp-parties">
-      ${buildExpParties(r)}
+    <div class="card-ftr"><span class="exp-hint">${T('tapCandidates')}</span><span class="exp-icon">⌄</span></div>
+    <div class="cand-sec">
+      <div class="cand-hdr"><span class="cand-title">${lang==='ne'?'उम्मेदवारहरू':'Candidates'} — ${rName(r).toUpperCase()}</span><span style="font-size:8px;color:var(--muted);font-family:'DM Mono',monospace">EC Nepal · NepseBajar</span></div>
+      ${candHtml}
     </div>
   </div>`;
-}
-
-
-// ── BUILD EXPANDED PARTY LIST ─────────────────────────────────
-function buildExpParties(r) {
-  const parties = (r.parties||[]);
-  if (!parties.length) return `<div style="color:var(--muted);font-size:9px;padding:4px 0">${T('noData')}</div>`;
-  const top5   = parties.slice(0,5);
-  const maxV   = top5[0]?.votes || 1;
-  let rows = top5.map((p,i)=>{
-    const pm  = pMeta(p.party);
-    const bw  = maxV>0&&p.votes>0?Math.round(p.votes/maxV*100):0;
-    const won = p.status==='won';
-    const cand = p.candidate ? `<span style="color:var(--fg);font-size:8.5px">${p.candidate}</span>` : '';
-    return `<div class="exp-p-row">
-      <div class="exp-p-dot" style="background:${pm.color}"></div>
-      <div class="exp-p-short" style="color:${pm.color}">${pm.short}</div>
-      <div class="exp-p-name">${cand||partyLabel(p.party,p.candidate)}${won?`<span class="exp-p-won">✓ ${T('won')}</span>`:''}</div>
-      <div class="exp-p-votes" style="color:${pm.color}">${fmt(p.votes)}</div>
-    </div>
-    <div class="exp-p-bar" style="width:${bw}%;background:${pm.color};margin-bottom:2px"></div>`;
-  }).join('');
-  return rows;
-}
-
-// ── SEAT TALLY ────────────────────────────────────────────────
-function renderTally() {
-  const declared = regions.filter(r=>r.status==='declared'&&r.parties&&r.parties.length>0);
-  const row = document.getElementById('tallyRow');
-  if (!row) return;
-  if (!declared.length) {
-    row.innerHTML = `<div style="color:var(--muted);font-size:10px;padding:4px 0">${lang==='ne'?'घोषित नतिजा कुर्दैछ…':'Waiting for declared results…'}</div>`;
-    return;
-  }
-  // Count seats per party
-  const seats = {};
-  for (const r of declared) {
-    const w = r.parties[0].party;
-    seats[w] = (seats[w]||0)+1;
-  }
-  // Sort by seats desc
-  const sorted = Object.entries(seats).sort((a,b)=>b[1]-a[1]);
-  const top5   = sorted.slice(0,5);
-  const others = sorted.slice(5).reduce((s,[,v])=>s+v,0);
-  const total  = declared.length;
-  const majority = 83; // 165/2 + 1
-  
-  let chips = top5.map(([party, count])=>{
-    const pm = pMeta(party);
-    const bg = pm.color+'22';
-    const border = pm.color+'55';
-    const countDisplay = lang==='ne' ? toNepaliNum(count) : count;
-    return `<div class="tally-chip" style="background:${bg};border:1.5px solid ${border}">
-      <div class="t-seats" style="color:${pm.color}">${countDisplay}</div>
-      <div class="t-short" style="color:${pm.color}">${pm.short}</div>
-      <div class="t-label">${lang==='ne'?'सिट':'seats'}</div>
-    </div>`;
-  }).join('');
-  
-  if (others>0) {
-    chips += `<div class="tally-chip others">
-      <div class="t-seats">${lang==='ne'?toNepaliNum(others):others}</div>
-      <div class="t-short">OTH</div>
-      <div class="t-label">${lang==='ne'?'अन्य':'others'}</div>
-    </div>`;
-  }
-
-  const leader = top5[0];
-  const leaderPm = leader ? pMeta(leader[0]) : null;
-  const leaderCount = leader ? (lang==='ne'?toNepaliNum(leader[1]):leader[1]) : 0;
-  const majorityDisplay = lang==='ne' ? toNepaliNum(majority) : majority;
-  const totalDisplay = lang==='ne' ? toNepaliNum(total) : total;
-  chips += `<div class="tally-maj">
-    <span style="color:${leaderPm?leaderPm.color:'var(--fg)'};">${leaderCount}</span>
-    ${lang==='ne'?`${leaderPm?leaderPm.short:'—'} अग्रणी`:`${leaderPm?leaderPm.short:'—'} leading`}
-    <br>${lang==='ne'?`बहुमत: ${majorityDisplay}`:`Majority: ${majorityDisplay}`}
-    <br>${lang==='ne'?`घोषित: ${totalDisplay}/१६५`:`Declared: ${totalDisplay}/165`}
-  </div>`;
-  
-  row.innerHTML = chips;
 }
 
 // ── TOGGLE CARD ──────────────────────────────────────────────
 async function toggleCard(id) {
-  if (expanded===id) { expanded=null; saveSettings(); renderGrid(); return; }
+  if (expanded===id) { expanded=null; renderGrid(); return; }
   expanded = id;
-  saveSettings();
   const r = regions.find(x=>x.id===id);
   if (r && r.candidates===null) {
     renderGrid(); // show loading spinner (candidates still null)
@@ -1559,166 +1017,67 @@ function setFilter(p, btn) {
   filter = p;
   document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  saveSettings();
   renderGrid();
 }
 
 // ── SPOTLIGHT ────────────────────────────────────────────────
-// ── SPOTLIGHT — fully dynamic (unlimited slots) ──────────────
-// loadPinnedIds() reads the old legacy key as migration fallback only.
-function loadPinnedIds() {
-  try {
-    const s = localStorage.getItem('chunab_pinned_ids');
-    if (s) { const a = JSON.parse(s); if (Array.isArray(a)) return a; }
-  } catch(e){}
-  try {
-    const s = localStorage.getItem('chunab_pinned');
-    if (s) { const a = JSON.parse(s); if (Array.isArray(a)) return a.map(v=>v?v.id||v:null); }
-  } catch(e){}
-  return [];
-}
-
-function addSpotSlot() {
-  if (pinned.length >= 10) return;
-  const idx = pinned.length;
-  pinned.push(null);
-  saveSettings();
-  renderSpotlight();
-  setTimeout(() => openPicker(idx), 60);
-}
-
-function removeLastSlot() {
-  if (pinned.length === 0) return;
-  pinned.pop();
-  saveSettings();
-  renderSpotlight();
-}
-
-function removeSpotSlot(idx, e) {
-  if (e) e.stopPropagation();
-  pinned.splice(idx, 1);
-  saveSettings();
-  renderSpotlight();
-}
-
 function openPicker(idx) {
-  // Close any open picker first
-  document.querySelectorAll('.picker').forEach(p => p.remove());
-  const slot = document.getElementById('slot' + idx);
-  if (!slot) return;
-  const items = regions.slice(0, 200).map(r =>
-    `<div class="pk-item" onclick="pickSlot(${idx},'${r.id}')">
-      <span class="pk-iname">${rName(r)}</span>
-      <span class="pk-imeta">${dName(r.district)} · ${T('province_lbl')} ${pName(r.province)}</span>
-    </div>`
-  ).join('');
-  slot.insertAdjacentHTML('beforeend', `<div class="picker" id="pk${idx}">
-    <div class="pk-hdr"><span class="pk-title">Select Race</span><button class="pk-close" onclick="closePicker(${idx},event)">×</button></div>
-    <input class="pk-search" placeholder="Search…" oninput="filterPicker(${idx},this.value)" onclick="event.stopPropagation()"/>
+  const slot = document.getElementById('slot'+idx);
+  if (slot.classList.contains('filled')) return;
+  const items = regions.slice(0,200).map(r=>`<div class="pk-item" onclick="pickSlot(${idx},'${r.id}')"><span class="pk-iname">${rName(r)}</span><span class="pk-imeta">${dName(r.district)} · ${T('province_lbl')} ${pName(r.province)}</span></div>`).join('');
+  slot.insertAdjacentHTML('beforeend',`<div class="picker" id="pk${idx}">
+    <div class="pk-hdr"><span class="pk-title">${T("spotlightN",idx+1)}</span><button class="pk-close" onclick="closePicker(${idx},event)">×</button></div>
+    <input class="pk-search" placeholder="${T('searchDots')}" oninput="filterPicker(${idx},this.value)" id="pks${idx}"/>
     <div class="pk-list" id="pkl${idx}">${items}</div>
   </div>`);
+  document.getElementById('pks'+idx)?.focus();
 }
-
-function filterPicker(idx, q) {
-  const list = document.getElementById('pkl' + idx);
-  if (!list) return;
-  const lq = q.toLowerCase();
-  const filtered = regions.filter(r =>
-    rName(r).toLowerCase().includes(lq) ||
-    dName(r.district).toLowerCase().includes(lq)
-  ).slice(0, 200);
-  list.innerHTML = filtered.map(r =>
-    `<div class="pk-item" onclick="pickSlot(${idx},'${r.id}')">
-      <span class="pk-iname">${rName(r)}</span>
-      <span class="pk-imeta">${dName(r.district)} · ${T('province_lbl')} ${pName(r.province)}</span>
-    </div>`
-  ).join('');
+function filterPicker(idx,val) {
+  const lf=val.toLowerCase();
+  const el=document.getElementById('pkl'+idx);
+  if (!el) return;
+  el.innerHTML = regions.filter(r=>!lf||r.name.toLowerCase().includes(lf)||r.district.toLowerCase().includes(lf)).slice(0,100)
+    .map(r=>`<div class="pk-item" onclick="pickSlot(${idx},'${r.id}')"><span class="pk-iname">${rName(r)}</span><span class="pk-imeta">${dName(r.district)} · ${T('province_lbl')} ${pName(r.province)}</span></div>`).join('');
 }
-
-function closePicker(idx, e) {
-  if (e) e.stopPropagation();
-  document.getElementById('pk' + idx)?.remove();
-}
-
+function closePicker(idx,e) { if(e)e.stopPropagation(); document.getElementById('pk'+idx)?.remove(); }
 function pickSlot(idx, rid) {
   closePicker(idx);
-  const r = regions.find(x => x.id === rid);
+  const r = regions.find(x=>x.id===rid);
   if (!r) return;
-  pinned[idx] = r;
-  saveSettings();
-  renderSpotlight();
+  slots[idx]=r; renderSlot(idx,r);
 }
-
-function clearSlot(idx, e) {
-  if (e) e.stopPropagation();
-  pinned[idx] = null;
-  saveSettings();
-  renderSpotlight();
-}
-
-function renderSpotlight() {
-  const grid    = document.getElementById('spotGrid');
-  const countEl = document.getElementById('spotCount');
-  const plusBtn = document.getElementById('spotPlus');
-  const minBtn  = document.getElementById('spotMinus');
-  if (!grid) return;
-  const total = pinned.length;
-  if (countEl) countEl.textContent = total;
-  if (plusBtn) plusBtn.disabled = total >= 10;
-  if (minBtn)  minBtn.disabled  = total === 0;
-  grid.innerHTML = pinned.map((r, i) => renderSlotHtml(i, r)).join('');
-  if (total === 0) {
-    grid.innerHTML = `<div style="color:var(--muted);font-size:10px;font-family:'DM Mono',monospace;padding:10px 2px">
-      Tap <strong style="color:var(--fg)">＋</strong> to pin a race
-    </div>`;
-  }
-}
-
-function renderSlotHtml(idx, r) {
-  if (!r) {
-    return `<div class="slot" id="slot${idx}" onclick="openPicker(${idx})">
-      <div class="slot-num">${idx + 1}</div>
-      <div class="slot-ico">📍</div>
-      <div class="slot-txt">SELECT REGION</div>
-      <div onclick="removeSpotSlot(${idx},event)" title="Remove" style="position:absolute;top:6px;right:6px;width:18px;height:18px;border-radius:4px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:var(--accent);font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10;line-height:1;transition:background .15s;" onmouseenter="this.style.background='rgba(239,68,68,.2)'" onmouseleave="this.style.background='rgba(239,68,68,.1)'">−</div>
-    </div>`;
-  }
-  const top3 = (r.parties || []).slice(0, 3);
-  const pct  = r.total_votes > 0 ? Math.round((r.votes_counted / r.total_votes) * 100) : 0;
-  const bc   = r.status === 'counting' ? 'b-cnt' : r.status === 'declared' ? 'b-dcl' : 'b-pnd';  const rows = top3.map((p, i) => {
-    const pm = pMeta(p.party);
-    const rk = ['r1','r2','r3'][i] || '';
+function renderSlot(idx,r) {
+  const slot=document.getElementById('slot'+idx);
+  const top3=(r.parties||[]).slice(0,3);
+  const pct=r.total_votes>0?Math.round((r.votes_counted/r.total_votes)*100):0;
+  const bc=r.status==='counting'?'b-cnt':r.status==='declared'?'b-dcl':'b-pnd';
+  const rows=top3.map((p,i)=>{
+    const pm=pMeta(p.party); const rk=['r1','r2','r3'][i]||'';
     return `<div class="sp-cand">
-      <div class="sp-rank ${rk}">${i + 1}</div>
-      <div class="sp-photo">${pm.logo ? `<img src="${pm.logo}" style="width:100%;height:100%;object-fit:contain;padding:3px" alt="${pm.short}"/>` : '👤'}</div>
-      <div class="sp-info">
-        <div class="sp-cname">${partyShort(pm, p.party, p.candidate)}</div>
-        <div class="sp-cparty" style="color:${pm.color}">${partyLabel(p.party, p.candidate)}</div>
-      </div>
-      <div class="sp-votes">
-        <div class="sp-vnum" style="color:${pm.color}">${fmt(p.votes)}</div>
-        <div class="sp-vlbl">${T('votesLbl')}</div>
-      </div>
+      <div class="sp-rank ${rk}">${i+1}</div>
+      <div class="sp-photo">${pm.logo?`<img src="${pm.logo}" style="width:100%;height:100%;object-fit:contain;padding:3px" alt="${pm.short}"/>`:'👤'}</div>
+      <div class="sp-info"><div class="sp-cname">${partyShort(pm,p.party,p.candidate)}</div><div class="sp-cparty" style="color:${pm.color}">${partyLabel(p.party,p.candidate)}</div></div>
+      <div class="sp-votes"><div class="sp-vnum" style="color:${pm.color}">${fmt(p.votes)}</div><div class="sp-vlbl">${T('votesLbl')}</div></div>
     </div>`;
-  }).join('') || `<div style="padding:8px;color:var(--muted);font-size:9px;font-family:'DM Mono',monospace">${T('noData')}</div>`;
-
-  return `<div class="slot filled" id="slot${idx}">
-    <div class="sp-hdr">
-      <div>
-        <div class="sp-name">${rName(r)}</div>
-        <div class="sp-meta">${dName(r.district)} · ${T('province_lbl')} ${pName(r.province)}</div>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
-        <span class="badge ${bc}">${T(r.status.toUpperCase())}</span>
-        <div class="sp-btns">
-          <button class="sp-btn edit" onclick="clearSlot(${idx},event)" title="Change">✎</button>
-          <button class="sp-btn del" onclick="removeSpotSlot(${idx},event)" title="Remove">✕</button>
-        </div>
-      </div>
+  }).join('')||`<div style="padding:8px;color:var(--muted);font-size:9px;font-family:'DM Mono',monospace">${T('noData')}</div>`;
+  slot.classList.add('filled');
+  slot.onclick=null;
+  slot.innerHTML=`<div class="sp-hdr">
+    <div><div class="sp-name">${rName(r)}</div><div class="sp-meta">${dName(r.district)} · ${T('province_lbl')} ${pName(r.province)}</div></div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+      <span class="badge ${bc}">${r.status.toUpperCase()}</span>
+      <button class="sp-clear" onclick="clearSlot(${idx},event)">✕</button>
     </div>
-    <div class="prog"><div class="prog-fill" style="width:${pct}%"></div></div>
-    <div class="sp-cands">${rows}</div>
-  </div>`;
+  </div>
+  <div class="prog"><div class="prog-fill" style="width:${pct}%"></div></div>
+  <div class="sp-cands">${rows}</div>`;
+}
+function clearSlot(idx,e) {
+  e.stopPropagation();
+  slots[idx]=null;
+  const slot=document.getElementById('slot'+idx);
+  slot.classList.remove('filled'); slot.onclick=()=>openPicker(idx);
+  slot.innerHTML=`<div class="slot-num">${idx+1}</div><div class="slot-ico">📍</div><div class="slot-txt">SELECT REGION</div>`;
 }
 
 // ── HERO VOTES ────────────────────────────────────────────────
@@ -1727,7 +1086,7 @@ function applyHero(hero) {
     if (!obj) return;
     const v=document.getElementById(vId), s=document.getElementById(sId);
     if (v) v.textContent=obj.votes!=null?fmt(obj.votes):'—';
-    if (s) { s.textContent=(obj.status||'').toUpperCase(); s.className='h-status '+(obj.status||''); }
+    if (s) { s.textContent=(obj.status||'').toUpperCase(); s.className='h-vstatus '+(obj.status||''); }
   };
   set('balenV','balenS',hero.balendra);
   set('oliV','oliS',hero.oli);
@@ -1780,7 +1139,7 @@ async function loadData() {
       live.forEach(r=>{ lm[r.id]=r; lm[r.name]=r; });
       regions = regions.map(base=>{
         const l = lm[base.id]||lm[base.name];
-        return l ? {...base,...l,candidates:base.candidates!==null?base.candidates:null,_sk:false} : {...base,_sk:false};
+        return l ? {...base,...l,candidates:null,_sk:false} : {...base,_sk:false};
       });
     } else {
       regions.forEach(r=>{r._sk=false;});
@@ -1791,14 +1150,8 @@ async function loadData() {
     setSrvStatus(true,`${T('serverOnline')} · ${ts}`);
     // Hero votes
     try { const h=await apiFetch('/hero'); applyHero(h); } catch(e){}
-    // Hydrate pinned: on first load map saved IDs → live region objects;
-    // on subsequent refreshes just refresh the region references.
-    if (_savedPinnedIds.length > 0 && pinned.every(r => r === null)) {
-      pinned = _savedPinnedIds.map(id => id ? regions.find(x => x.id === id) || null : null);
-    } else {
-      pinned = pinned.map(r => r ? (regions.find(x => x.id === r.id) || r) : null);
-    }
-    renderSpotlight();
+    // Re-render spotlight slots with fresh data
+    slots.forEach((r,i)=>{ if(r){ const fresh=regions.find(x=>x.id===r.id); if(fresh){slots[i]=fresh;renderSlot(i,fresh);} }});
   } catch(e) {
     setSrvStatus(false, T('serverOffline'));
     regions.forEach(r=>{r._sk=false;});
@@ -1806,80 +1159,19 @@ async function loadData() {
   }
 }
 
-async function doRefresh() { expanded=null; saveSettings(); await loadData(); }
-
-// ── LIVE CLOCK ────────────────────────────────────────────────
-function startLiveClock() {
-  const el = document.getElementById('liveClock');
-  if (!el) return;
-  function tick() {
-    const now = new Date();
-    el.textContent = now.toLocaleTimeString(
-      lang === 'ne' ? 'ne-NP' : 'en-US',
-      { hour: '2-digit', minute: '2-digit', second: '2-digit' }
-    );
-  }
-  tick();
-  // Align to the next whole second so the clock never skips
-  const msToNext = 1000 - (Date.now() % 1000);
-  setTimeout(() => { tick(); setInterval(tick, 1000); }, msToNext);
-}
+async function doRefresh() { expanded=null; await loadData(); }
 
 // ── INIT ─────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded',()=>{
-  const s = restoreSettings();
-
-  // ── Restore theme ──────────────────────────────────────────
-  if ((s.theme || 'dark') === 'light') {
-    document.body.classList.add('light');
-    const btn = document.getElementById('themeBtn');
-    if (btn) btn.textContent = '☀️';
-  }
-
-  // ── Restore language ───────────────────────────────────────
-  if (s.lang && s.lang !== 'en') {
-    lang = s.lang;
-    applyLang();
-  }
-
-  // ── Restore province filter ────────────────────────────────
-  if (s.filter && s.filter !== 'all') {
-    filter = s.filter;
-    document.querySelectorAll('.fbtn').forEach(btn => {
-      const prov = btn.getAttribute('data-prov');
-      btn.classList.toggle('active', prov === s.filter);
-    });
-  }
-
-  // ── Restore search query ───────────────────────────────────
-  if (s.search) {
-    const sb  = document.getElementById('searchBox');
-    const sbm = document.getElementById('searchBoxMobile');
-    if (sb)  sb.value  = s.search;
-    if (sbm) sbm.value = s.search;
-  }
-
-  // ── Restore expanded card ──────────────────────────────────
-  if (s.expanded) expanded = s.expanded;
-
-  // ── Restore spotlight pins (placeholder nulls until data loads) ──
-  _savedPinnedIds = (s.pinned && s.pinned.length) ? s.pinned : loadPinnedIds();
-  pinned = _savedPinnedIds.map(() => null);
-
-  // ── Show skeletons immediately ─────────────────────────────
+  // Show skeletons immediately
   regions = buildSkeletons();
   renderGrid();
-  renderSpotlight();
-
-  // Start the live clock
-  startLiveClock();
-
-  // Hide loader after 800ms
-  setTimeout(()=>document.getElementById('loader').classList.add('gone'), 800);
-  // Fetch live data after skeletons paint
-  setTimeout(loadData, 900);
-  // Auto-refresh every 5 minutes
-  autoTimer = setInterval(loadData, 300000);
+  // Hide loader at 800ms no matter what
+  setTimeout(()=>document.getElementById('loader').classList.add('gone'),800);
+  // Fetch data after skeletons paint
+  setTimeout(loadData,900);
+  // Auto-refresh every 90s
+  autoTimer = setInterval(loadData,300000);
 });
 </script>
 </body>

@@ -28,72 +28,11 @@ import requests
 from bs4 import BeautifulSoup
 
 # ─────────────────────────────────────────────────────────────
-# GLOBAL PLAYWRIGHT BROWSER SINGLETON
-# One Chromium process shared across all scrape calls.
-# Launched lazily on first use; restarted if it crashes.
-# ─────────────────────────────────────────────────────────────
-_pw_instance   = None   # sync_playwright() context manager result
-_pw_browser    = None   # the Chromium Browser object
-_pw_lock       = threading.Lock()
-_early_log     = logging.getLogger(__name__)  # available immediately; same logger as `log` below
-
-# Chromium flags tuned for minimal RAM on Render free tier (512 MB)
-CHROMIUM_ARGS = [
-    "--no-sandbox",
-    "--disable-dev-shm-usage",
-    "--single-process",           # collapse renderer/GPU/network into one process (~100 MB saving)
-    "--disable-gpu",
-    "--disable-extensions",
-    "--disable-background-networking",
-    "--disable-default-apps",
-    "--disable-sync",
-    "--metrics-recording-only",
-    "--mute-audio",
-    "--no-first-run",
-    "--safebrowsing-disable-auto-update",
-]
-
-def _get_browser():
-    """Return the global Chromium browser, launching it if needed."""
-    global _pw_instance, _pw_browser
-    with _pw_lock:
-        if _pw_browser is not None and _pw_browser.is_connected():
-            return _pw_browser
-        # Close stale instance if any
-        try:
-            if _pw_instance:
-                _pw_instance.__exit__(None, None, None)
-        except Exception:
-            pass
-        try:
-            from playwright.sync_api import sync_playwright
-            _pw_instance = sync_playwright()
-            p = _pw_instance.__enter__()
-            _pw_browser = p.chromium.launch(headless=True, args=CHROMIUM_ARGS)
-            _early_log.info("Playwright browser launched (singleton).")
-            return _pw_browser
-        except Exception as e:
-            _early_log.error(f"Failed to launch Playwright browser: {e}")
-            _pw_browser = None
-            return None
-
-def _block_unnecessary(route):
-    """Abort heavy assets — images, fonts, stylesheets, media.
-    XHR/fetch ('xhr', 'fetch') and scripts ('script') are always allowed through
-    so JS-rendered data and JSON interception work correctly.
-    """
-    if route.request.resource_type in ("image", "stylesheet", "font", "media"):
-        route.abort()
-    else:
-        route.continue_()
-
-# ─────────────────────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────────────────────
-REFRESH_INTERVAL = 180          # seconds between scrapes (3 min — more responsive on election day)
+REFRESH_INTERVAL = 300          # seconds between scrapes
 EC_BASE          = "https://result.election.gov.np"
 EKANTIPUR_BASE   = "https://election.ekantipur.com"
-ONLINEKHABAR_BASE= "https://election.onlinekhabar.com"
 CHUNAB_BASE      = "https://www.chunab.org"
 NEPSEBAJAR_BASE  = "https://election.nepsebajar.com"
 
@@ -333,6 +272,7 @@ def build_pending_regions():
             "votes_counted": 0,
             "total_votes":   50000,
             "parties":       [],
+            "candidates":    None,
         }
         for m in MASTER
     ]
@@ -341,7 +281,6 @@ cache = {
     "regions":      build_pending_regions(),
     "last_updated": None,
     "status":       "initializing",
-    "source":       "none",
     "error":        None,
     "hero": {
         "balendra": {"votes": None, "status": None, "constituency": None},
@@ -352,57 +291,29 @@ cache_lock = threading.Lock()
 
 # ─────────────────────────────────────────────────────────────
 # SCRAPER — Election Commission REST API
-# result.election.gov.np uses a .NET backend.
-# We try multiple known endpoint patterns — the correct one
-# returns a JSON list of constituency result objects.
 # ─────────────────────────────────────────────────────────────
 EC_API_ENDPOINTS = [
-    # Most likely real endpoints (observed from network tab in 2079/2078 elections)
-    "/api/Result/GetPRResult",
-    "/api/Result/GetFPTPResult",
-    "/api/Result/GetAllResult",
-    "/api/Result/GetConstituencyWiseResult",
-    "/api/Home/GetConstituencyResult",
-    "/api/Home/GetAllConstituencyResult",
-    # Generic fallbacks
     "/api/Result/GetAllConstituencyResult",
     "/api/GetConstituencyResult",
     "/api/result/GetAllConstituencyResult",
     "/api/result/constituency",
     "/api/Result/constituency",
-    "/api/Results",
-    "/api/results",
 ]
 
 def try_ec_api():
-    """Try hitting the EC REST endpoints directly.
-    Accepts any JSON response that contains a non-empty list
-    of objects with constituency-like keys.
-    """
+    """Try hitting the EC REST endpoints directly."""
     for ep in EC_API_ENDPOINTS:
         try:
             url = EC_BASE + ep
-            r = requests.get(url, headers=HEADERS, timeout=20)
-            if not r.ok:
-                continue
-            ct = r.headers.get("Content-Type", "")
-            if "json" not in ct and not r.text.strip().startswith(("[", "{")):
-                continue
-            data = r.json()
-            # Accept list directly
-            if isinstance(data, list) and len(data) > 0:
-                # Sanity-check: at least one item has constituency-like keys
-                sample = data[0]
-                if any(k for k in sample if "constit" in k.lower() or "name" in k.lower()):
+            r = requests.get(url, headers=HEADERS, timeout=15)
+            if r.ok:
+                data = r.json()
+                if isinstance(data, list) and len(data) > 0:
                     log.info(f"EC API hit: {ep} — {len(data)} records")
                     return data
-            # Accept wrapped in "data" key
-            if isinstance(data, dict):
-                for key in ("data", "Data", "result", "Result", "results", "Results"):
-                    inner = data.get(key)
-                    if isinstance(inner, list) and len(inner) > 0:
-                        log.info(f"EC API hit: {ep} (key={key}) — {len(inner)} records")
-                        return inner
+                if isinstance(data, dict) and data.get("data"):
+                    log.info(f"EC API hit: {ep} — {len(data['data'])} records")
+                    return data["data"]
         except Exception as e:
             log.debug(f"EC API {ep} failed: {e}")
     return None
@@ -442,7 +353,7 @@ def normalize_ec_record(rec):
         "province":      base["province"]      if base else prov_no,
         "province_name": base["province_name"] if base else PROVINCES.get(prov_no, {}).get("name", "Province " + prov_no),
         "status":        ("declared" if rec.get("IsResult")
-                          else "counting" if (rec.get("VoteCount") or 0) > 100
+                          else "counting" if (rec.get("VoteCount") or 0) > 0
                           else "pending"),
         "votes_counted": int(rec.get("VoteCount") or rec.get("votes_counted") or 0),
         "total_votes":   int(rec.get("TotalVoters") or rec.get("total_votes") or 50000),
@@ -453,770 +364,83 @@ def normalize_ec_record(rec):
 # ─────────────────────────────────────────────────────────────
 # SCRAPER — Playwright (JS-rendered pages)
 # ─────────────────────────────────────────────────────────────
-def scrape_with_playwright(url, wait_selector=None, timeout=45000, intercept_json=False):
-    """
-    Load a JS-rendered page using the global singleton Chromium browser.
-
-    Optimisations vs the old per-call launcher:
-      • Reuses one browser process (no 2–3 s launch overhead per call)
-      • --single-process flag collapses renderer/GPU into one OS process
-      • Resource blocking: aborts images/fonts/CSS so only JS+XHR load
-      • intercept_json=True captures XHR payloads directly
-
-    Returns (html, captured_json_list).  html may be None on failure.
-    """
-    captured_json = []
-    browser = _get_browser()
-    if browser is None:
-        return None, []
-
-    ctx  = None
-    page = None
-    on_response = None
+def scrape_with_playwright(url, wait_selector=None, timeout=30000):
     try:
-        ctx = browser.new_context(
-            extra_http_headers={
-                "User-Agent":      HEADERS["User-Agent"],
-                "Accept-Language": HEADERS["Accept-Language"],
-            },
-            ignore_https_errors=True,
-        )
-        page = ctx.new_page()
-
-        # Block heavy assets — only JS and XHR matter for election data
-        page.route("**/*", _block_unnecessary)
-
-        if intercept_json:
-            def on_response(response):
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.set_extra_http_headers(HEADERS)
+            page.goto(url, timeout=timeout)
+            if wait_selector:
                 try:
-                    ct = response.headers.get("content-type", "")
-                    if "json" in ct and response.status == 200:
-                        text = response.text()
-                        if len(text) > 200:
-                            data = json.loads(text)
-                            if isinstance(data, list) and len(data) > 5:
-                                captured_json.append(data)
-                            elif isinstance(data, dict):
-                                for k in ("data","Data","result","Result","results","Results"):
-                                    v = data.get(k)
-                                    if isinstance(v, list) and len(v) > 5:
-                                        captured_json.append(v)
-                                        break
+                    page.wait_for_selector(wait_selector, timeout=timeout)
                 except Exception:
                     pass
-            page.on("response", on_response)
-        else:
-            on_response = None
-
-        page.goto(url, timeout=timeout, wait_until="domcontentloaded")
-
-        if wait_selector:
-            try:
-                page.wait_for_selector(wait_selector, timeout=15000)
-            except Exception:
-                pass
-        try:
-            page.wait_for_load_state("networkidle", timeout=8000)
-        except Exception:
-            pass
-
-        html = page.content()
-        return html, captured_json
-
+            else:
+                page.wait_for_load_state("networkidle", timeout=timeout)
+            html = page.content()
+            browser.close()
+            return html
+    except ImportError:
+        log.warning("Playwright not installed. Run: playwright install chromium")
+        return None
     except Exception as e:
         log.warning(f"Playwright failed for {url}: {e}")
-        return None, []
-    finally:
-        try:
-            if on_response and page:
-                page.remove_listener("response", on_response)
-        except Exception:
-            pass
-        try:
-            if page:  page.close()
-            if ctx:   ctx.close()
-        except Exception:
-            pass
+        return None
 
 
-# ── Rich HTML parsers ────────────────────────────────────────
-
-def _extract_number(text):
-    """Pull the first integer out of a string.
-    Handles both Latin (0-9) and Nepali Unicode digits (०-९).
-    """
-    import re
-    if not text:
-        return 0
-    # Convert Nepali digits to Latin
-    nepali_to_latin = str.maketrans('०१२३४५६७८९', '0123456789')
-    text = text.translate(nepali_to_latin)
-    # Remove commas used as thousand separators
-    text = text.replace(',', '').replace('،', '')
-    m = re.search(r'\d+', text)
-    return int(m.group()) if m else 0
-
-
-def parse_ec_html(html):
-    """
-    Parse the EC results page HTML.
-    The page typically shows a table:
-      Constituency | Province | Leading Party | Candidate | Votes | Status
-    We extract whatever we can and match back to MASTER by name.
-    """
+def parse_table_results(html, source_name):
+    """Parse standard HTML table results from any election page."""
     soup = BeautifulSoup(html, "html.parser")
     regions = []
-
-    for table in soup.find_all("table"):
-        headers = [th.get_text(strip=True).lower() for th in table.find_all("th")]
+    tables = soup.find_all("table")
+    for table in tables:
         rows = table.find_all("tr")
-        if len(rows) < 2:
-            continue
-
         for row in rows[1:]:
-            cells = [td.get_text(strip=True) for td in row.find_all(["td","th"])]
-            if len(cells) < 2:
-                continue
-
-            # Heuristic: first non-empty cell that matches a MASTER constituency
-            name = ""
-            for cell in cells:
-                if cell.lower() in MASTER_BY_NAME:
-                    name = cell
-                    break
-            if not name:
-                name = cells[0]
-
-            # Try to find votes column (largest number in the row)
-            votes = 0
-            for cell in cells:
-                n = _extract_number(cell)
-                if n > votes:
-                    votes = n
-
-            # Party: look for known party keywords
-            party = ""
-            for cell in cells:
-                if any(kw in cell for kw in ["Congress","UML","Maoist","Swatantra",
-                                              "Prajatantra","Independent","Janamat",
-                                              "Samajwadi","Unmukti","Communist"]):
-                    party = cell
-                    break
-
-            if name:
+            cols = [c.get_text(strip=True) for c in row.find_all(["td", "th"])]
+            if len(cols) >= 3:
                 regions.append({
-                    "id": "",
-                    "name": name,
-                    "district": "—",
-                    "province": "?",
+                    "id":            str(len(regions) + 1),
+                    "name":          cols[0] or "—",
+                    "district":      cols[1] if len(cols) > 1 else "—",
+                    "province":      "?",
                     "province_name": "Unknown",
-                    "status": "counting",
-                    "votes_counted": votes,
-                    "total_votes": 50000,
+                    "status":        "counting",
+                    "votes_counted": 0,
+                    "total_votes":   50000,
                     "parties": [
-                        {"party": party or "Unknown", "candidate": "",
-                         "votes": votes, "status": "leading"}
-                    ] if party else [],
-                    "_source": "ec_html",
+                        {"party": cols[2], "candidate": "", "votes": 0, "status": "leading"}
+                    ] if len(cols) > 2 else [],
+                    "_source": source_name,
                 })
-
-    # De-duplicate by name
-    seen = set()
-    unique = []
-    for r in regions:
-        key = r["name"].lower()
-        if key not in seen:
-            seen.add(key)
-            unique.append(r)
-    return unique
-
-
-def parse_ekantipur_html(html):
-    """
-    Ekantipur election page uses React.  The rendered DOM typically contains
-    divs/spans rather than tables.  We try tables first, then fall back to
-    looking for constituency name patterns inside any element.
-    """
-    import re
-    soup = BeautifulSoup(html, "html.parser")
-    regions = []
-
-    # Pass 1: tables (same as before)
-    for table in soup.find_all("table"):
-        rows = table.find_all("tr")
-        for row in rows[1:]:
-            cells = [td.get_text(strip=True) for td in row.find_all(["td","th"])]
-            if len(cells) < 2:
-                continue
-            name = cells[0]
-            if not name or len(name) > 80:
-                continue
-            party = cells[2] if len(cells) > 2 else ""
-            votes = _extract_number(cells[3]) if len(cells) > 3 else 0
-            regions.append({
-                "id": "", "name": name, "district": cells[1] if len(cells) > 1 else "—",
-                "province": "?", "province_name": "Unknown",
-                "status": "counting", "votes_counted": votes, "total_votes": 50000,
-                "parties": [{"party": party, "candidate": "", "votes": votes,
-                              "status": "leading"}] if party else [],
-                "_source": "ekantipur",
-            })
-
-    if regions:
-        return regions
-
-    # Pass 2: look for any element whose text matches a known constituency name
-    all_text_els = soup.find_all(string=True)
-    matched_names = set()
-    for text in all_text_els:
-        t = text.strip()
-        if t.lower() in MASTER_BY_NAME and t not in matched_names:
-            matched_names.add(t)
-            # Try to find vote count in adjacent sibling/parent text
-            parent = text.parent
-            nearby_text = " ".join(s.strip() for s in parent.find_all(string=True))
-            votes = _extract_number(nearby_text)
-            regions.append({
-                "id": "", "name": t, "district": "—",
-                "province": "?", "province_name": "Unknown",
-                "status": "counting" if votes > 0 else "pending",
-                "votes_counted": votes, "total_votes": 50000,
-                "parties": [], "_source": "ekantipur",
-            })
-
     return regions
-
-
-def scrape_ec_html():
-    """Scrape EC results page (JS-rendered). Also intercepts XHR JSON."""
-    log.info("Scraping EC HTML page...")
-    html, captured = scrape_with_playwright(
-        EC_BASE + "/",
-        wait_selector="table, tr, .result",
-        intercept_json=True,
-    )
-    # Prefer intercepted JSON (more structured)
-    if captured:
-        for payload in captured:
-            try:
-                normalised = [normalize_ec_record(r) for r in payload]
-                if normalised:
-                    log.info(f"EC HTML (intercepted JSON): {len(normalised)} records")
-                    return normalised
-            except Exception as e:
-                log.debug(f"EC intercepted JSON parse error: {e}")
-
-    if not html:
-        return []
-    result = parse_ec_html(html)
-    log.info(f"EC HTML (parsed): {len(result)} records")
-    return result
 
 
 def scrape_ekantipur():
     """Scrape Ekantipur election results page."""
     log.info("Scraping Ekantipur...")
-    html, captured = scrape_with_playwright(
+    html = scrape_with_playwright(
         EKANTIPUR_BASE + "/?lng=eng",
-        wait_selector="table, .constituency, [class*='result'], [class*='Result']",
-        intercept_json=True,
-        timeout=50000,
+        wait_selector="table, .result, .constituency",
+        timeout=40000,
     )
-    if captured:
-        for payload in captured:
-            try:
-                normalised = [normalize_ec_record(r) for r in payload]
-                if normalised:
-                    log.info(f"Ekantipur (intercepted JSON): {len(normalised)} records")
-                    return normalised
-            except Exception:
-                pass
     if not html:
         return []
-    result = parse_ekantipur_html(html)
-    log.info(f"Ekantipur (parsed HTML): {len(result)} records")
-    return result
+    return parse_table_results(html, "ekantipur")
 
 
-def scrape_chunab_org():
-    """Scrape chunab.org as an additional fallback."""
-    log.info("Scraping chunab.org...")
-    try:
-        r = requests.get(CHUNAB_BASE + "/results", headers=HEADERS, timeout=20)
-        if not r.ok:
-            r = requests.get(CHUNAB_BASE, headers=HEADERS, timeout=20)
-        if r.ok:
-            result = parse_ec_html(r.text)   # generic table parser
-            if result:
-                for rec in result:
-                    rec["_source"] = "chunab_org"
-                log.info(f"chunab.org: {len(result)} records")
-                return result
-    except Exception as e:
-        log.warning(f"chunab.org failed: {e}")
-
-    # Try with Playwright
-    html, captured = scrape_with_playwright(
-        CHUNAB_BASE,
-        wait_selector="table, tr",
-        intercept_json=True,
+def scrape_ec_html():
+    """Scrape EC results page via Playwright (JS-rendered)."""
+    log.info("Scraping EC HTML page...")
+    html = scrape_with_playwright(
+        EC_BASE + "/",
+        wait_selector="table, .result-table",
         timeout=40000,
     )
-    if captured:
-        for payload in captured:
-            try:
-                normalised = [normalize_ec_record(r) for r in payload]
-                if normalised:
-                    log.info(f"chunab.org (intercepted JSON): {len(normalised)} records")
-                    return normalised
-            except Exception:
-                pass
-    if html:
-        result = parse_ec_html(html)
-        if result:
-            log.info(f"chunab.org (parsed): {len(result)} records")
-            return result
-    return []
-
-
-# ─────────────────────────────────────────────────────────────
-# SCRAPER — OnlineKhabar (PRIMARY)
-# URL pattern: election.onlinekhabar.com/<province-slug>/<district><N>
-# The results table on each constituency page is server-side rendered
-# (WordPress), so plain requests works — no Playwright needed.
-# We also try their wp-json custom endpoint first.
-# ─────────────────────────────────────────────────────────────
-
-# Mapping: MASTER constituency name → OnlineKhabar URL slug
-# Derived from the live site's navigation (seen in fetched HTML)
-OK_SLUGS = {
-    # Province slugs observed: koshi-chetra, madhesh-chetra, central-chetra,
-    # gandaki-chetra, lumbini-chetra, karnali-chetra, sudurpashchim-chetra
-    # District+number slug pattern: districtname+number (Nepali digits stripped, latin only)
-    "Morang - 1":          ("koshi-chetra",         "morang1"),
-    "Morang - 2":          ("koshi-chetra",         "morang2"),
-    "Morang - 3":          ("koshi-chetra",         "morang3"),
-    "Morang - 4":          ("koshi-chetra",         "morang4"),
-    "Morang - 5":          ("koshi-chetra",         "morang5"),
-    "Morang - 6":          ("koshi-chetra",         "morang6"),
-    "Jhapa - 1":           ("koshi-chetra",         "jhapa1"),
-    "Jhapa - 2":           ("koshi-chetra",         "jhapa2"),
-    "Jhapa - 3":           ("koshi-chetra",         "jhapa3"),
-    "Jhapa - 4":           ("koshi-chetra",         "jhapa4"),
-    "Jhapa - 5":           ("koshi-chetra",         "jhapa5"),
-    "Sunsari - 1":         ("koshi-chetra",         "sunsari1"),
-    "Sunsari - 2":         ("koshi-chetra",         "sunsari2"),
-    "Sunsari - 3":         ("koshi-chetra",         "sunsari3"),
-    "Sunsari - 4":         ("koshi-chetra",         "sunsari4"),
-    "Ilam - 1":            ("koshi-chetra",         "ilam1"),
-    "Ilam - 2":            ("koshi-chetra",         "ilam2"),
-    "Udayapur - 1":        ("koshi-chetra",         "udayapur1"),
-    "Udayapur - 2":        ("koshi-chetra",         "udayapur2"),
-    "Taplejung":           ("koshi-chetra",         "taplejung1"),
-    "Panchthar":           ("koshi-chetra",         "panchthar1"),
-    "Sankhuwasabha":       ("koshi-chetra",         "sankhuwasabha1"),
-    "Tehrathum":           ("koshi-chetra",         "tehrathum1"),
-    "Bhojpur":             ("koshi-chetra",         "bhojpur1"),
-    "Dhankuta":            ("koshi-chetra",         "dhankuta1"),
-    "Solukhumbu":          ("koshi-chetra",         "solukhumbu1"),
-    "Khotang":             ("koshi-chetra",         "khotang1"),
-    "Okhaldhunga":         ("koshi-chetra",         "okhaldhunga1"),
-    "Saptari - 1":         ("madhesh-chetra",       "saptari1"),
-    "Saptari - 2":         ("madhesh-chetra",       "saptari2"),
-    "Saptari - 3":         ("madhesh-chetra",       "saptari3"),
-    "Saptari - 4":         ("madhesh-chetra",       "saptari4"),
-    "Siraha - 1":          ("madhesh-chetra",       "siraha1"),
-    "Siraha - 2":          ("madhesh-chetra",       "siraha2"),
-    "Siraha - 3":          ("madhesh-chetra",       "siraha3"),
-    "Siraha - 4":          ("madhesh-chetra",       "siraha4"),
-    "Dhanusha - 1":        ("madhesh-chetra",       "dhanusha1"),
-    "Dhanusha - 2":        ("madhesh-chetra",       "dhanusha2"),
-    "Dhanusha - 3":        ("madhesh-chetra",       "dhanusha3"),
-    "Dhanusha - 4":        ("madhesh-chetra",       "dhanusha4"),
-    "Mahottari - 1":       ("madhesh-chetra",       "mahottari1"),
-    "Mahottari - 2":       ("madhesh-chetra",       "mahottari2"),
-    "Mahottari - 3":       ("madhesh-chetra",       "mahottari3"),
-    "Mahottari - 4":       ("madhesh-chetra",       "mahottari4"),
-    "Sarlahi - 1":         ("madhesh-chetra",       "sarlahi1"),
-    "Sarlahi - 2":         ("madhesh-chetra",       "sarlahi2"),
-    "Sarlahi - 3":         ("madhesh-chetra",       "sarlahi3"),
-    "Sarlahi - 4":         ("madhesh-chetra",       "sarlahi4"),
-    "Rautahat - 1":        ("madhesh-chetra",       "rautahat1"),
-    "Rautahat - 2":        ("madhesh-chetra",       "rautahat2"),
-    "Rautahat - 3":        ("madhesh-chetra",       "rautahat3"),
-    "Rautahat - 4":        ("madhesh-chetra",       "rautahat4"),
-    "Bara - 1":            ("madhesh-chetra",       "bara1"),
-    "Bara - 2":            ("madhesh-chetra",       "bara2"),
-    "Bara - 3":            ("madhesh-chetra",       "bara3"),
-    "Bara - 4":            ("madhesh-chetra",       "bara4"),
-    "Parsa - 1":           ("madhesh-chetra",       "parsa1"),
-    "Parsa - 2":           ("madhesh-chetra",       "parsa2"),
-    "Parsa - 3":           ("madhesh-chetra",       "parsa3"),
-    "Parsa - 4":           ("madhesh-chetra",       "parsa4"),
-    "Kathmandu - 1":       ("central-chetra",       "kathmandu1"),
-    "Kathmandu - 2":       ("central-chetra",       "kathmandu2"),
-    "Kathmandu - 3":       ("central-chetra",       "kathmandu3"),
-    "Kathmandu - 4":       ("central-chetra",       "kathmandu4"),
-    "Kathmandu - 5":       ("central-chetra",       "kathmandu5"),
-    "Kathmandu - 6":       ("central-chetra",       "kathmandu6"),
-    "Kathmandu - 7":       ("central-chetra",       "kathmandu7"),
-    "Kathmandu - 8":       ("central-chetra",       "kathmandu8"),
-    "Kathmandu - 9":       ("central-chetra",       "kathmandu9"),
-    "Kathmandu - 10":      ("central-chetra",       "kathmandu10"),
-    "Chitwan - 1":         ("central-chetra",       "chitwan1"),
-    "Chitwan - 2":         ("central-chetra",       "chitwan2"),
-    "Chitwan - 3":         ("central-chetra",       "chitwan3"),
-    "Lalitpur - 1":        ("central-chetra",       "lalitpur1"),
-    "Lalitpur - 2":        ("central-chetra",       "lalitpur2"),
-    "Lalitpur - 3":        ("central-chetra",       "lalitpur3"),
-    "Kavrepalanchok - 1":  ("central-chetra",       "kavre1"),
-    "Kavrepalanchok - 2":  ("central-chetra",       "kavre2"),
-    "Sindhupalchok - 1":   ("central-chetra",       "sindhupalchok1"),
-    "Sindhupalchok - 2":   ("central-chetra",       "sindhupalchok2"),
-    "Makwanpur - 1":       ("central-chetra",       "makwanpur1"),
-    "Makwanpur - 2":       ("central-chetra",       "makwanpur2"),
-    "Nuwakot - 1":         ("central-chetra",       "nuwakot1"),
-    "Nuwakot - 2":         ("central-chetra",       "nuwakot2"),
-    "Dhading - 1":         ("central-chetra",       "dhading1"),
-    "Dhading - 2":         ("central-chetra",       "dhading2"),
-    "Bhaktapur - 1":       ("central-chetra",       "bhaktapur1"),
-    "Bhaktapur - 2":       ("central-chetra",       "bhaktapur2"),
-    "Dolakha":             ("central-chetra",       "dolakha1"),
-    "Ramechhap":           ("central-chetra",       "ramechhap1"),
-    "Sindhuli - 1":        ("central-chetra",       "sindhuli1"),
-    "Sindhuli - 2":        ("central-chetra",       "sindhuli2"),
-    "Rasuwa":              ("central-chetra",       "rasuwa1"),
-    "Kaski - 1":           ("gandaki-chetra",       "kaski1"),
-    "Kaski - 2":           ("gandaki-chetra",       "kaski2"),
-    "Kaski - 3":           ("gandaki-chetra",       "kaski3"),
-    "Tanahun - 1":         ("gandaki-chetra",       "tanahun1"),
-    "Tanahun - 2":         ("gandaki-chetra",       "tanahun2"),
-    "Syangja - 1":         ("gandaki-chetra",       "syangja1"),
-    "Syangja - 2":         ("gandaki-chetra",       "syangja2"),
-    "Baglung - 1":         ("gandaki-chetra",       "baglung1"),
-    "Baglung - 2":         ("gandaki-chetra",       "baglung2"),
-    "Nawalpur - 1":        ("gandaki-chetra",       "nawalpur1"),
-    "Nawalpur - 2":        ("gandaki-chetra",       "nawalpur2"),
-    "Gorkha - 1":          ("gandaki-chetra",       "gorkha1"),
-    "Gorkha - 2":          ("gandaki-chetra",       "gorkha2"),
-    "Lamjung":             ("gandaki-chetra",       "lamjung1"),
-    "Manang":              ("gandaki-chetra",       "manang1"),
-    "Mustang":             ("gandaki-chetra",       "mustang1"),
-    "Myagdi":              ("gandaki-chetra",       "myagdi1"),
-    "Parbat":              ("gandaki-chetra",       "parbat1"),
-    "Rupandehi - 1":       ("lumbini-chetra",       "rupandehi1"),
-    "Rupandehi - 2":       ("lumbini-chetra",       "rupandehi2"),
-    "Rupandehi - 3":       ("lumbini-chetra",       "rupandehi3"),
-    "Rupandehi - 4":       ("lumbini-chetra",       "rupandehi4"),
-    "Rupandehi - 5":       ("lumbini-chetra",       "rupandehi5"),
-    "Dang - 1":            ("lumbini-chetra",       "dang1"),
-    "Dang - 2":            ("lumbini-chetra",       "dang2"),
-    "Dang - 3":            ("lumbini-chetra",       "dang3"),
-    "Kapilvastu - 1":      ("lumbini-chetra",       "kapilvastu1"),
-    "Kapilvastu - 2":      ("lumbini-chetra",       "kapilvastu2"),
-    "Kapilvastu - 3":      ("lumbini-chetra",       "kapilvastu3"),
-    "Banke - 1":           ("lumbini-chetra",       "banke1"),
-    "Banke - 2":           ("lumbini-chetra",       "banke2"),
-    "Banke - 3":           ("lumbini-chetra",       "banke3"),
-    "Gulmi - 1":           ("lumbini-chetra",       "gulmi1"),
-    "Gulmi - 2":           ("lumbini-chetra",       "gulmi2"),
-    "Palpa - 1":           ("lumbini-chetra",       "palpa1"),
-    "Palpa - 2":           ("lumbini-chetra",       "palpa2"),
-    "Bardiya - 1":         ("lumbini-chetra",       "bardiya1"),
-    "Bardiya - 2":         ("lumbini-chetra",       "bardiya2"),
-    "Nawalparasi West - 1":("lumbini-chetra",       "nawalparasi1"),
-    "Nawalparasi West - 2":("lumbini-chetra",       "nawalparasi2"),
-    "Arghakhanchi":        ("lumbini-chetra",       "arghakhanchi1"),
-    "Pyuthan":             ("lumbini-chetra",       "pyuthan1"),
-    "Rolpa":               ("lumbini-chetra",       "rolpa1"),
-    "Rukum East":          ("lumbini-chetra",       "rukumpurba1"),
-    "Surkhet - 1":         ("karnali-chetra",       "surkhet1"),
-    "Surkhet - 2":         ("karnali-chetra",       "surkhet2"),
-    "Dailekh - 1":         ("karnali-chetra",       "dailekh1"),
-    "Dailekh - 2":         ("karnali-chetra",       "dailekh2"),
-    "Rukum West":          ("karnali-chetra",       "rukumpashchim1"),
-    "Salyan":              ("karnali-chetra",       "salyan1"),
-    "Jajarkot":            ("karnali-chetra",       "jajarkot1"),
-    "Dolpa":               ("karnali-chetra",       "dolpa1"),
-    "Jumla":               ("karnali-chetra",       "jumla1"),
-    "Kalikot":             ("karnali-chetra",       "kalikot1"),
-    "Mugu":                ("karnali-chetra",       "mugu1"),
-    "Humla":               ("karnali-chetra",       "humla1"),
-    "Kailali - 1":         ("sudurpashchim-chetra", "kailali1"),
-    "Kailali - 2":         ("sudurpashchim-chetra", "kailali2"),
-    "Kailali - 3":         ("sudurpashchim-chetra", "kailali3"),
-    "Kailali - 4":         ("sudurpashchim-chetra", "kailali4"),
-    "Kailali - 5":         ("sudurpashchim-chetra", "kailali5"),
-    "Kanchanpur - 1":      ("sudurpashchim-chetra", "kanchanpur1"),
-    "Kanchanpur - 2":      ("sudurpashchim-chetra", "kanchanpur2"),
-    "Kanchanpur - 3":      ("sudurpashchim-chetra", "kanchanpur3"),
-    "Achham - 1":          ("sudurpashchim-chetra", "achham1"),
-    "Achham - 2":          ("sudurpashchim-chetra", "achham2"),
-    "Bajura":              ("sudurpashchim-chetra", "bajura1"),
-    "Bajhang":             ("sudurpashchim-chetra", "bajhang1"),
-    "Doti":                ("sudurpashchim-chetra", "doti1"),
-    "Darchula":            ("sudurpashchim-chetra", "darchula1"),
-    "Baitadi":             ("sudurpashchim-chetra", "baitadi1"),
-    "Dadeldhura":          ("sudurpashchim-chetra", "dadeldhura1"),
-}
-
-
-def parse_ok_constituency_page(html, constituency_name):
-    """
-    Parse a single OnlineKhabar constituency result page.
-
-    The page has THREE tables:
-      1. प्रत्यक्ष       — 2082 LIVE results  ← we want THIS ONE ONLY
-      2. प्रत्यक्ष २०७९  — 2079 old results   ← must skip
-      3. समानुपातिक २०७९ — 2079 proportional  ← must skip
-
-    The tables are rendered in order in the HTML so we just take the FIRST
-    table that has a candidate name in it and stop there.
-
-    Candidate name is inside a <a> link in column 1 (index 1).
-    Party name is in column 2 (index 2) — also an <a> link.
-    Votes are in column 3 (index 3) — Nepali Unicode digits or empty.
-    """
-    soup = BeautifulSoup(html, "html.parser")
-    parties = []
-
-    for table in soup.find_all("table"):
-        rows = table.find_all("tr")
-        if len(rows) < 2:
-            continue
-
-        # Check this is a candidate table — header should contain उम्मेदवार
-        header_text = rows[0].get_text()
-        if "उम्मेदवार" not in header_text and "S.N." not in header_text:
-            continue
-
-        # Parse candidate rows
-        for row in rows[1:]:
-            cells = row.find_all(["td", "th"])
-            if len(cells) < 2:
-                continue
-
-            # Candidate name — first <a> tag in cell[1]
-            cand_cell = cells[1]
-            cand_link = cand_cell.find("a")
-            cand_name = cand_link.get_text(strip=True) if cand_link else cand_cell.get_text(" ", strip=True).split("\n")[0].strip()
-
-            # Skip header rows or empty rows
-            if not cand_name or cand_name in ("S.N.", "उम्मेदवार", ""):
-                continue
-
-            # Party name — first <a> tag in cell[2]
-            party = ""
-            if len(cells) > 2:
-                party_cell = cells[2]
-                party_link = party_cell.find("a")
-                party = party_link.get_text(strip=True) if party_link else party_cell.get_text(strip=True)
-
-            # If party still empty, look inside the candidate cell (some pages embed it)
-            if not party:
-                all_links = cand_cell.find_all("a")
-                if len(all_links) > 1:
-                    party = all_links[-1].get_text(strip=True)
-
-            # Votes — cell[3] if exists, else last cell
-            votes = 0
-            if len(cells) > 3:
-                votes = _extract_number(cells[3].get_text(strip=True))
-            if votes == 0 and len(cells) > 1:
-                votes = _extract_number(cells[-1].get_text(strip=True))
-
-            if cand_name:
-                parties.append({
-                    "party":     party or "Unknown",
-                    "candidate": cand_name,
-                    "votes":     votes,
-                    "status":    "trailing",
-                })
-
-        # Stop after the FIRST valid candidate table — don't fall into 2079 tables
-        if parties:
-            break
-
-    if not parties:
-        return None
-
-    parties.sort(key=lambda x: x["votes"], reverse=True)
-    if parties[0]["votes"] > 0:
-        parties[0]["status"] = "leading"
-
-    votes_counted = sum(p["votes"] for p in parties)
-    status = "counting" if votes_counted > 0 else "pending"
-
-    return {
-        "name":          constituency_name,
-        "status":        status,
-        "votes_counted": votes_counted,
-        "total_votes":   50000,
-        "parties":       parties,
-        "_source":       "onlinekhabar",
-    }
-
-
-def _ok_fetch_page(name):
-    """
-    Fetch a single OnlineKhabar constituency page via the singleton browser.
-    Votes are JS-rendered so plain requests won't work.
-    Tries intercepted XHR JSON first, falls back to rendered HTML.
-    Returns a result dict or None.
-    """
-    slug_info = OK_SLUGS.get(name)
-    if not slug_info:
-        return None
-    prov_slug, const_slug = slug_info
-    url = f"{ONLINEKHABAR_BASE}/{prov_slug}/{const_slug}"
-
-    html, captured = scrape_with_playwright(
-        url,
-        wait_selector="table, .election-result, [class*='result'], [class*='candidate']",
-        intercept_json=True,
-        timeout=40000,
-    )
-
-    # Priority 1: XHR JSON (structured, fast)
-    for payload in captured:
-        try:
-            sample = payload[0] if payload else {}
-            if any(k for k in sample if k.lower() in
-                   ("name","candidate","candidate_name","party","votes","vote_count")):
-                parties = []
-                for item in payload:
-                    cand  = (item.get("candidate_name") or item.get("candidate")
-                             or item.get("name") or "")
-                    party = item.get("party") or item.get("party_name") or ""
-                    votes = int(item.get("votes") or item.get("vote_count")
-                                or item.get("voteCount") or 0)
-                    if cand or party:
-                        parties.append({"party": party or "Unknown", "candidate": cand,
-                                        "votes": votes, "status": "trailing"})
-                if parties:
-                    parties.sort(key=lambda x: x["votes"], reverse=True)
-                    if parties[0]["votes"] > 0:
-                        parties[0]["status"] = "leading"
-                    vc = sum(p["votes"] for p in parties)
-                    return {"name": name, "status": "counting" if vc > 0 else "pending",
-                            "votes_counted": vc, "total_votes": 50000,
-                            "parties": parties, "_source": "onlinekhabar_xhr"}
-        except Exception:
-            pass
-
-    # Priority 2: rendered HTML
-    return parse_ok_constituency_page(html, name) if html else None
-
-
-# scrape_onlinekhabar_one is an alias kept for any callers elsewhere
-scrape_onlinekhabar_one = _ok_fetch_page
-
-
-def rolling_scrape_loop():
-    """
-    Continuously scrapes OnlineKhabar one constituency at a time, forever.
-    Uses the global singleton browser — no per-fetch launch overhead.
-    Cache is updated after every successful fetch for near-real-time data.
-    """
-    DELAY_BETWEEN = 5    # seconds between pages (polite; avoids 429)
-    DELAY_ON_ERROR = 10  # seconds after a failed fetch
-
-    names = [m["name"] for m in MASTER]
-    log.info(f"Rolling scraper started — {len(names)} constituencies, {DELAY_BETWEEN}s delay")
-    log.info(f"Full cycle ≈ {len(names) * DELAY_BETWEEN // 60} min {len(names) * DELAY_BETWEEN % 60}s")
-
-    round_num = 0
-    while True:
-        round_num += 1
-        log.info(f"━━━ Rolling round {round_num} ━━━")
-        success_count = 0
-
-        for i, name in enumerate(names, 1):
-            result = _ok_fetch_page(name)
-
-            if result:
-                success_count += 1
-                with cache_lock:
-                    for j, region in enumerate(cache["regions"]):
-                        if region["name"] == name:
-                            cache["regions"][j] = {
-                                **region,
-                                "status":        result.get("status", region["status"]),
-                                "votes_counted": result.get("votes_counted", region["votes_counted"]),
-                                "total_votes":   result.get("total_votes", region["total_votes"]),
-                                "parties":       result.get("parties", region["parties"]),
-                            }
-                            break
-                    cache["last_updated"] = datetime.now().isoformat()
-                    cache["status"]       = "ok"
-                    cache["source"]       = "onlinekhabar_rolling"
-                    cache["error"]        = None
-                    _update_hero_votes_locked(cache["regions"])
-                log.info(f"[{i}/{len(names)}] ✓ {name} — {result['votes_counted']} votes")
-                time.sleep(DELAY_BETWEEN)
-            else:
-                log.debug(f"[{i}/{len(names)}] – {name}: no data")
-                time.sleep(DELAY_ON_ERROR)
-
-        log.info(f"━━━ Round {round_num} done — {success_count}/{len(names)} ━━━")
-
-
-def scrape_onlinekhabar_all():
-    """
-    Startup sequential scrape of all 165 pages via the singleton browser.
-    Sequential (not parallel) because each page needs a real browser tab
-    and parallel Playwright contexts would exhaust RAM on Render free tier.
-    """
-    names   = [m["name"] for m in MASTER]
-    results = []
-    log.info(f"Startup batch: scraping {len(names)} OnlineKhabar pages (singleton browser)...")
-
-    for i, name in enumerate(names, 1):
-        result = _ok_fetch_page(name)
-        if result:
-            results.append(result)
-            log.info(f"[{i}/{len(names)}] ✓ {name} — {result['votes_counted']} votes")
-        else:
-            log.debug(f"[{i}/{len(names)}] – {name}: no data")
-        time.sleep(2)  # polite delay
-
-    live = [r for r in results if r.get("votes_counted", 0) > 0]
-    log.info(f"Startup batch done: {len(live)} live / {len(results)} total")
-    return results
-
-
-def scrape_onlinekhabar_summary():
-    """
-    Fast path: scrape the OnlineKhabar homepage which shows a party seat
-    summary and any highlighted results — used as a quick sanity check.
-    Also tries the WordPress REST API for any custom election endpoint.
-    """
-    # Try WordPress custom REST endpoint first
-    ok_api_endpoints = [
-        "/wp-json/election/v1/results",
-        "/wp-json/election/v1/constituencies",
-        "/wp-json/ok-election/v1/results",
-        "/wp-json/wp/v2/election-result",
-        "/wp-json/election-api/v1/all",
-    ]
-    for ep in ok_api_endpoints:
-        try:
-            url = ONLINEKHABAR_BASE + ep
-            r = requests.get(url, headers=HEADERS, timeout=10)
-            if r.ok and "json" in r.headers.get("Content-Type", ""):
-                data = r.json()
-                if isinstance(data, list) and len(data) > 5:
-                    log.info(f"OnlineKhabar REST API hit: {ep} — {len(data)} records")
-                    return data  # raw, caller normalises
-                if isinstance(data, dict):
-                    for key in ("data", "results", "constituencies"):
-                        inner = data.get(key, [])
-                        if isinstance(inner, list) and len(inner) > 5:
-                            log.info(f"OnlineKhabar REST API hit: {ep} key={key}")
-                            return inner
-        except Exception:
-            pass
-    return None
+    if not html:
+        return []
+    return parse_table_results(html, "ec_html")
 
 
 # ─────────────────────────────────────────────────────────────
@@ -1226,10 +450,10 @@ def merge_live_into_master(live_regions):
     """
     Always return all 165 constituencies from MASTER.
     Overlay live data where available; keep pending status for the rest.
-    Matches by id first (only when id is non-empty), then by normalised name.
+    Matches by id first, then by normalised name.
     """
-    live_by_id   = {r["id"]: r for r in live_regions if r.get("id")}
-    live_by_name = {r["name"].lower(): r for r in live_regions if r.get("name")}
+    live_by_id   = {r["id"]: r for r in live_regions}
+    live_by_name = {r["name"].lower(): r for r in live_regions}
 
     result = []
     for m in MASTER:
@@ -1265,100 +489,84 @@ def nepsebajar_slug(name):
 
 
 def nepsebajar_id(constituency_id):
-    try:
-        return int(constituency_id)
-    except (TypeError, ValueError):
-        return None
+    return int(constituency_id)
 
 
 def fetch_candidates_nepsebajar(constituency_id, constituency_name):
     nb_id = nepsebajar_id(constituency_id)
-    if nb_id is None:
-        return []
     slug  = nepsebajar_slug(constituency_name)
+    url   = f"{NEPSEBAJAR_BASE}/en/pratinidhi/{nb_id}/{slug}-election-result-live-election-2082"
+    log.info(f"NepseBajar scrape: {url}")
 
-    # Try multiple URL patterns
-    url_patterns = [
-        f"{NEPSEBAJAR_BASE}/en/pratinidhi/{nb_id}/{slug}-election-result-live-election-2082",
-        f"{NEPSEBAJAR_BASE}/en/pratinidhi/{nb_id}/{slug}",
-        f"{NEPSEBAJAR_BASE}/en/constituency/{nb_id}",
-        f"{NEPSEBAJAR_BASE}/en/result/{nb_id}",
-    ]
+    try:
+        html = scrape_with_playwright(url, wait_selector=".candidate, img", timeout=25000)
+        if not html:
+            r = requests.get(url, headers=HEADERS, timeout=15)
+            if r.ok:
+                html = r.text
+        if not html:
+            return []
 
-    for url in url_patterns:
-        log.info(f"NepseBajar try: {url}")
-        try:
-            # Try plain requests first (much faster)
-            r = requests.get(url, headers=HEADERS, timeout=12)
-            html = r.text if r.ok and len(r.text) > 500 else None
+        soup = BeautifulSoup(html, "html.parser")
+        candidates = []
 
-            if not html:
-                pw_html, _ = scrape_with_playwright(url, wait_selector=".candidate, img", timeout=20000)
-                html = pw_html
+        for img in soup.find_all("img", src=lambda s: s and "/img/candidates/" in s):
+            photo_url = img["src"]
+            if not photo_url.startswith("http"):
+                photo_url = NEPSEBAJAR_BASE + photo_url
 
-            if not html:
+            card = img.find_parent(["div", "article", "li", "a"])
+            if not card:
                 continue
 
-            soup = BeautifulSoup(html, "html.parser")
-            candidates = []
+            name_el = card.find(["h4", "h3", "strong", "a"])
+            name = name_el.get_text(strip=True) if name_el else "—"
+            if constituency_name.lower() in name.lower() and len(name) > 30:
+                name = "—"
 
-            for img in soup.find_all("img", src=lambda s: s and "/img/candidates/" in s):
-                photo_url = img["src"]
-                if not photo_url.startswith("http"):
-                    photo_url = NEPSEBAJAR_BASE + photo_url
+            party = "—"
+            texts = [t.get_text(strip=True) for t in card.find_all(["p", "span", "div"])
+                     if t.get_text(strip=True) and len(t.get_text(strip=True)) > 2]
+            for t in texts:
+                if any(kw in t for kw in ["Congress", "UML", "Maoist", "Swatantra",
+                                           "Prajatantra", "Independent", "Janamat",
+                                           "Samajwadi", "Communist", "Unmukti"]):
+                    party = t
+                    break
 
-                card = img.find_parent(["div", "article", "li", "a"])
-                if not card:
-                    continue
+            logo_img   = card.find("img", src=lambda s: s and "/partylogo/" in s)
+            party_logo = None
+            if logo_img:
+                party_logo = logo_img["src"]
+                if not party_logo.startswith("http"):
+                    party_logo = NEPSEBAJAR_BASE + party_logo
 
-                name_el = card.find(["h4", "h3", "strong", "a"])
-                name = name_el.get_text(strip=True) if name_el else "—"
-                if constituency_name.lower() in name.lower() and len(name) > 30:
-                    name = "—"
+            votes = 0
+            for t in card.find_all(string=True):
+                t = t.strip()
+                if t.isdigit() and int(t) > 0:
+                    votes = int(t)
+                    break
 
-                party = "—"
-                texts = [t.get_text(strip=True) for t in card.find_all(["p", "span", "div"])
-                         if t.get_text(strip=True) and len(t.get_text(strip=True)) > 2]
-                for t in texts:
-                    if any(kw in t for kw in ["Congress", "UML", "Maoist", "Swatantra",
-                                               "Prajatantra", "Independent", "Janamat",
-                                               "Samajwadi", "Communist", "Unmukti"]):
-                        party = t
-                        break
+            if name and name != "—":
+                candidates.append({
+                    "name":       name,
+                    "party":      party,
+                    "votes":      votes,
+                    "status":     "trailing",
+                    "photo_url":  photo_url,
+                    "party_logo": party_logo,
+                })
 
-                logo_img   = card.find("img", src=lambda s: s and "/partylogo/" in s)
-                party_logo = None
-                if logo_img:
-                    party_logo = logo_img["src"]
-                    if not party_logo.startswith("http"):
-                        party_logo = NEPSEBAJAR_BASE + party_logo
+        if candidates:
+            candidates.sort(key=lambda x: x["votes"], reverse=True)
+            if candidates[0]["votes"] > 0:
+                candidates[0]["status"] = "leading"
+            log.info(f"NepseBajar: {len(candidates)} candidates for {constituency_name}")
+            return candidates
 
-                votes = 0
-                for t in card.find_all(string=True):
-                    t = t.strip()
-                    if t.isdigit() and int(t) > 0:
-                        votes = int(t)
-                        break
-
-                if name and name != "—":
-                    candidates.append({
-                        "name":       name,
-                        "party":      party,
-                        "votes":      votes,
-                        "status":     "trailing",
-                        "photo_url":  photo_url,
-                        "party_logo": party_logo,
-                    })
-
-            if candidates:
-                candidates.sort(key=lambda x: x["votes"], reverse=True)
-                if candidates[0]["votes"] > 0:
-                    candidates[0]["status"] = "leading"
-                log.info(f"NepseBajar: {len(candidates)} candidates for {constituency_name}")
-                return candidates
-
-        except Exception as e:
-            log.warning(f"NepseBajar failed for {constituency_name} ({url}): {e}")
+    except Exception as e:
+        log.warning(f"NepseBajar scrape failed for {constituency_name}: {e}")
 
     return []
 
@@ -1426,10 +634,10 @@ def fetch_candidates(constituency_id, constituency_name):
 BALEN_KEYWORDS = ["balendra", "balen shah", "balen"]
 OLI_KEYWORDS   = ["kp sharma oli", "kp oli", "sharma oli", "k.p. oli"]
 
-def _compute_hero_votes(regions):
-    """Compute hero vote data from regions without touching the lock."""
+def update_hero_votes(regions):
     balen = {"votes": None, "status": None, "constituency": None}
     oli   = {"votes": None, "status": None, "constituency": None}
+
     for region in regions:
         for p in region.get("parties", []):
             cname = (p.get("candidate") or "").lower()
@@ -1437,12 +645,7 @@ def _compute_hero_votes(regions):
                 balen = {"votes": p["votes"], "status": p["status"], "constituency": region["name"]}
             if oli["votes"] is None and any(k in cname for k in OLI_KEYWORDS):
                 oli   = {"votes": p["votes"], "status": p["status"], "constituency": region["name"]}
-    return balen, oli
 
-
-def update_hero_votes(regions):
-    """Compute and commit hero votes. Safe to call from OUTSIDE cache_lock only."""
-    balen, oli = _compute_hero_votes(regions)
     with cache_lock:
         if balen["votes"] is not None:
             cache["hero"]["balendra"] = balen
@@ -1450,73 +653,30 @@ def update_hero_votes(regions):
             cache["hero"]["oli"] = oli
 
 
-def _update_hero_votes_locked(regions):
-    """Update hero votes while cache_lock is ALREADY HELD by the caller."""
-    balen, oli = _compute_hero_votes(regions)
-    if balen["votes"] is not None:
-        cache["hero"]["balendra"] = balen
-    if oli["votes"] is not None:
-        cache["hero"]["oli"] = oli
-
-
 # ─────────────────────────────────────────────────────────────
 # MAIN SCRAPE LOOP
 # ─────────────────────────────────────────────────────────────
 def scrape_all():
-    """
-    Full scrape cycle.
-    Priority:
-      1. OnlineKhabar REST API (fastest if available)
-      2. OnlineKhabar per-constituency pages (parallel, reliable)
-      3. EC REST API
-      4. EC HTML + XHR intercept
-      5. Ekantipur
-      6. chunab.org
-    Always produces exactly 165 regions by merging live data into MASTER.
-    """
+    """Full scrape cycle. Tries EC API → EC HTML → Ekantipur.
+    Always produces exactly 165 regions by merging into MASTER."""
     log.info("Starting scrape cycle...")
     live_regions = []
-    source_used  = "none"
 
-    # ── Strategy 1: OnlineKhabar WordPress REST API (instant if present) ──
-    ok_api_data = scrape_onlinekhabar_summary()
-    if ok_api_data:
-        try:
-            live_regions = [normalize_ec_record(r) for r in ok_api_data]
-            source_used  = "onlinekhabar_api"
-            log.info(f"Strategy 1 (OK REST API): {len(live_regions)} records")
-        except Exception as e:
-            log.warning(f"OK API normalise failed: {e}")
-            live_regions = []
+    # Strategy 1: EC REST API
+    ec_data = try_ec_api()
+    if ec_data:
+        live_regions = [normalize_ec_record(r) for r in ec_data]
+        log.info(f"EC API: got {len(live_regions)} live records")
 
-    # ── Strategy 2: EC REST API ────────────────────────────────────────────
-    if not live_regions:
-        ec_data = try_ec_api()
-        if ec_data:
-            live_regions = [normalize_ec_record(r) for r in ec_data]
-            source_used  = "ec_api"
-            log.info(f"Strategy 2 (EC API): {len(live_regions)} records")
-
-    # ── Strategy 3: EC HTML + XHR intercept ───────────────────────────────
+    # Strategy 2: EC HTML via Playwright
     if not live_regions:
         live_regions = scrape_ec_html()
-        if live_regions:
-            source_used = "ec_html"
-        log.info(f"Strategy 3 (EC HTML): {len(live_regions)} records")
+        log.info(f"EC HTML: got {len(live_regions)} records")
 
-    # ── Strategy 4: Ekantipur ──────────────────────────────────────────────
+    # Strategy 3: Ekantipur fallback
     if not live_regions:
         live_regions = scrape_ekantipur()
-        if live_regions:
-            source_used = "ekantipur"
-        log.info(f"Strategy 4 (Ekantipur): {len(live_regions)} records")
-
-    # ── Strategy 5: chunab.org ─────────────────────────────────────────────
-    if not live_regions:
-        live_regions = scrape_chunab_org()
-        if live_regions:
-            source_used = "chunab_org"
-        log.info(f"Strategy 5 (chunab.org): {len(live_regions)} records")
+        log.info(f"Ekantipur: got {len(live_regions)} records")
 
     # Always produce full 165-region list
     regions = merge_live_into_master(live_regions)
@@ -1525,64 +685,21 @@ def scrape_all():
     with cache_lock:
         cache["regions"]      = regions
         cache["last_updated"] = datetime.now().isoformat()
-        cache["source"]       = source_used
-        cache["status"]       = "ok" if live_regions else "pending"
-        cache["error"]        = (
-            None if live_regions
-            else "All sources failed or counting has not started yet."
-        )
-    log.info(f"Cache updated: {len(regions)} regions | live: {len(live_regions)} | source: {source_used}")
+        cache["status"]       = "ok" if live_regions else "error"
+        cache["error"]        = None if live_regions else "Could not fetch live data — showing pending placeholders."
+    log.info(f"Cache updated: {len(regions)} regions | live: {len(live_regions)}")
 
 
 def background_loop():
-    """
-    Startup sequence:
-      1. Quick initial batch fill (parallel) so the dashboard isn't empty
-      2. Launch the rolling one-by-one loop in a separate thread
-      3. This thread then falls back to EC/Ekantipur if OnlineKhabar fails
-    """
-    # ── Step 1: fast initial fill via batch scrape ──
-    log.info("=== Startup: running initial batch scrape ===")
-    try:
-        ok_pages = scrape_onlinekhabar_all()
-        if ok_pages:
-            regions = merge_live_into_master(ok_pages)
-            update_hero_votes(regions)
-            with cache_lock:
-                cache["regions"]      = regions
-                cache["last_updated"] = datetime.now().isoformat()
-                cache["status"]       = "ok"
-                cache["source"]       = "onlinekhabar_startup"
-                cache["error"]        = None
-            log.info(f"=== Initial batch done: {len(ok_pages)} regions loaded ===")
-        else:
-            log.warning("Initial batch returned nothing — trying EC fallback...")
-            scrape_all()  # full fallback chain
-    except Exception as e:
-        log.error(f"Startup batch error: {e}")
+    while True:
         try:
             scrape_all()
-        except Exception as e2:
-            log.error(f"Fallback scrape also failed: {e2}")
-
-    # ── Step 2: launch the rolling loop in a background thread ──
-    rolling_thread = threading.Thread(target=rolling_scrape_loop, daemon=True)
-    rolling_thread.start()
-    log.info("Rolling scraper thread launched.")
-
-    # ── Step 3: this thread periodically runs the full fallback chain
-    # in case OnlineKhabar goes down (every 10 minutes) ──
-    FALLBACK_INTERVAL = 600
-    while True:
-        time.sleep(FALLBACK_INTERVAL)
-        with cache_lock:
-            src = cache.get("source", "")
-        if "onlinekhabar" not in src:
-            log.info("Rolling scraper appears stalled — running full fallback chain...")
-            try:
-                scrape_all()
-            except Exception as e:
-                log.error(f"Fallback loop error: {e}")
+        except Exception as e:
+            log.error(f"Scrape loop error: {e}")
+            with cache_lock:
+                cache["status"] = "error"
+                cache["error"]  = str(e)
+        time.sleep(REFRESH_INTERVAL)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -1608,7 +725,6 @@ def api_status():
         return jsonify({
             "status":       cache["status"],
             "last_updated": cache["last_updated"],
-            "source":       cache.get("source", "unknown"),
             "total":        len(cache["regions"]),
             "error":        cache["error"],
         })
